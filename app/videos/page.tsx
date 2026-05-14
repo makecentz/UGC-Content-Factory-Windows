@@ -1,45 +1,49 @@
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { VideoActions } from "@/components/action-buttons";
+import { KidsStoryExportActions } from "@/components/kids-story-actions";
 import { Badge, Card } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
 import { toPublicFileUrl } from "@/lib/storage";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function VideosPage() {
-  const videos = await prisma.video.findMany({ orderBy: { createdAt: "desc" }, include: { series: true } });
+  const videos = await prisma.kidsStoryProject.findMany({
+    where: { status: "rendered", finalVideoPath: { not: null } },
+    orderBy: { updatedAt: "desc" }
+  });
 
   return (
     <>
-      <PageHeader title="Videos" subtitle="Generated videos, scripts, statuses, and local export previews." />
+      <PageHeader title="Completed Videos" subtitle="Finished kids story renders ready to preview, open, and download from your local export folder." />
       <div className="grid gap-5">
-        {videos.map((video) => {
-          const url = toPublicFileUrl(video.finalVideoPath);
+        {videos.map((project) => {
+          const url = toPublicFileUrl(project.finalVideoPath);
+          const aspectClass = project.aspectRatio === "9:16" ? "aspect-[9/16]" : "aspect-video";
           return (
-            <Card key={video.id} className="grid gap-5 lg:grid-cols-[220px_1fr]">
-              <div className="aspect-[9/16] overflow-hidden rounded-xl bg-pilot-soft">
-                {url && video.status === "ready" ? <video src={url} controls className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center px-5 text-center text-sm text-pilot-muted">{video.status === "failed" ? "Render failed" : "Preview appears when ready"}</div>}
+            <Card key={project.id} className="grid gap-5 lg:grid-cols-[260px_1fr]">
+              <div className={`${aspectClass} overflow-hidden rounded-xl bg-pilot-soft`}>
+                {url ? <video src={url} controls className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center px-5 text-center text-sm text-pilot-muted">Preview unavailable</div>}
               </div>
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-xl font-black">{video.title}</h2>
-                    <p className="mt-1 text-sm text-pilot-muted">{video.series.name} · {video.mode} · {video.createdAt.toLocaleDateString()}</p>
+                    <h2 className="text-xl font-black">{project.title}</h2>
+                    <p className="mt-1 text-sm text-pilot-muted">Kids Story · Ages {project.ageRange} · {project.aspectRatio} · {project.updatedAt.toLocaleDateString()}</p>
                   </div>
-                  <Badge tone={video.status === "ready" ? "ready" : video.status === "failed" ? "failed" : "generating"}>{video.status}</Badge>
+                  <Badge tone="ready">completed</Badge>
                 </div>
-                {video.errorMessage ? <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{video.errorMessage}</div> : null}
-                <p className="mt-4 line-clamp-4 text-sm leading-6 text-pilot-muted">{video.script || "Script will appear after generation completes."}</p>
+                <p className="mt-4 line-clamp-4 text-sm leading-6 text-pilot-muted">{project.script || "Finished kids story export."}</p>
+                {project.finalVideoPath ? <p className="mt-3 break-all rounded-xl bg-pilot-soft p-3 text-xs text-pilot-muted">{project.finalVideoPath}</p> : null}
                 <div className="mt-5">
-                  <VideoActions id={video.id} filePath={video.finalVideoPath} />
-                  <Link href={`/videos/${video.id}`} className="mt-3 inline-flex text-sm font-semibold text-pilot-purple">Storyboard details</Link>
+                  <KidsStoryExportActions id={project.id} finalVideoPath={project.finalVideoPath} />
+                  <Link href={`/kids/${project.id}`} className="mt-3 inline-flex text-sm font-semibold text-pilot-purple">Story details</Link>
                 </div>
               </div>
             </Card>
           );
         })}
-        {videos.length === 0 ? <Card><p className="text-sm text-pilot-muted">No videos generated yet.</p></Card> : null}
+        {videos.length === 0 ? <Card><p className="text-sm text-pilot-muted">No completed kids story videos yet. Render a story and it will appear here.</p></Card> : null}
       </div>
     </>
   );

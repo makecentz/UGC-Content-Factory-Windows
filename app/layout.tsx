@@ -3,8 +3,11 @@ import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 
 export const metadata: Metadata = {
-  title: "UGC Content Factory Windows",
-  description: "Local-first faceless short-form video generator"
+  title: "UGC Content Factory Kids",
+  description: "Local-first Windows kids story video generator",
+  icons: {
+    icon: "/ugccflogo.png"
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

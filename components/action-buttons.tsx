@@ -171,11 +171,9 @@ export function DebugLogActions() {
 
 export function ApiKeySettings({
   openaiConfigured,
-  googleConfigured,
   exportsFolder
 }: {
   openaiConfigured: boolean;
-  googleConfigured: boolean;
   exportsFolder: string;
 }) {
   const router = useRouter();
@@ -197,7 +195,6 @@ export function ApiKeySettings({
           body: JSON.stringify({
             action: "save-api-keys",
             openaiApiKey: String(form.get("openaiApiKey") || "").trim(),
-            googleApiKey: String(form.get("googleApiKey") || "").trim(),
             exportsFolder: String(form.get("exportsFolder") || "").trim()
           })
         });
@@ -220,15 +217,6 @@ export function ApiKeySettings({
             className="mt-2 h-11 w-full rounded-xl border border-pilot-line px-3 text-sm outline-none focus:border-pilot-purple"
           />
         </label>
-        <label className="text-sm font-semibold">
-          Google / Veo API key
-          <input
-            name="googleApiKey"
-            type="password"
-            placeholder={googleConfigured ? "Configured - enter a new key to replace" : "Paste Google AI Studio key"}
-            className="mt-2 h-11 w-full rounded-xl border border-pilot-line px-3 text-sm outline-none focus:border-pilot-purple"
-          />
-        </label>
       </div>
       <div className="grid gap-3 text-xs leading-5 text-pilot-muted md:grid-cols-2">
         <ApiKeyHelpLink
@@ -237,13 +225,6 @@ export function ApiKeySettings({
           tooltip="Create an OpenAI API key for scripts, storyboards, images, and OpenAI voice generation."
         >
           Get an OpenAI key from the OpenAI API keys page.
-        </ApiKeyHelpLink>
-        <ApiKeyHelpLink
-          label="Google / Veo"
-          href="https://aistudio.google.com/app/apikey"
-          tooltip="Create a Google AI Studio API key for Gemini and Veo video rendering."
-        >
-          Get a Google AI Studio key for Google/Veo features.
         </ApiKeyHelpLink>
       </div>
       <label className="block text-sm font-semibold">
@@ -257,7 +238,7 @@ export function ApiKeySettings({
       </label>
       <div className="flex flex-wrap items-center gap-3">
         <Button disabled={busy}>{busy ? "Saving..." : "Save API Keys & Export Folder"}</Button>
-        <span className="text-sm text-pilot-muted">OpenAI: {openaiConfigured ? "Configured" : "Missing"} · Google/Veo: {googleConfigured ? "Configured" : "Missing"}</span>
+        <span className="text-sm text-pilot-muted">OpenAI: {openaiConfigured ? "Configured" : "Missing"}</span>
       </div>
       {message ? <p className="text-sm text-pilot-muted">{message}</p> : null}
     </form>

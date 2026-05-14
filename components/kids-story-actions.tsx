@@ -211,6 +211,33 @@ export function KidsStoryUploadDetailsButton({ id }: { id: string }) {
   );
 }
 
+export function KidsStoryExportActions({ id, finalVideoPath }: { id: string; finalVideoPath?: string | null }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const router = useRouter();
+
+  async function openExport() {
+    if (!finalVideoPath) return;
+    setBusy("open");
+    await fetch("/api/videos/open", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: finalVideoPath })
+    });
+    setBusy(null);
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button variant="secondary" disabled={!finalVideoPath || busy === "open"} onClick={openExport}>
+        {busy === "open" ? "Opening..." : "Open Export"}
+      </Button>
+      <Button variant="secondary" onClick={() => router.push(`/kids/${id}`)}>
+        Open Story
+      </Button>
+    </div>
+  );
+}
+
 export function KidsStoryBumperForm({
   id,
   introVideoPath,

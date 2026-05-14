@@ -164,7 +164,7 @@ export function SeriesWizard() {
 
       <div className="mt-8 flex justify-between">
         <Button variant="secondary" disabled={step === 1} onClick={() => setStep((current) => current - 1)}>Back</Button>
-        {step < 9 ? <Button onClick={() => setStep((current) => current + 1)}>Next</Button> : <Button disabled={saving} onClick={createSeries}>{saving ? "Creating..." : "Create Series"}</Button>}
+        {step < 9 ? <Button onClick={() => setStep((current) => current + 1)}>Next</Button> : <Button disabled={saving} onClick={createSeries}>{saving ? "Creating..." : "Create"}</Button>}
       </div>
     </Card>
   );

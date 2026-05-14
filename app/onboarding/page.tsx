@@ -18,10 +18,10 @@ export default async function OnboardingPage() {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl items-center">
       <Card className="w-full p-8">
-        <div className="inline-flex rounded-full bg-pilot-soft px-4 py-2 text-sm font-bold text-pilot-purple">Welcome to UGC Content Factory Windows</div>
-        <h1 className="mt-5 text-4xl font-black tracking-tight text-pilot-ink">Set up your AI keys to start creating videos.</h1>
+        <div className="inline-flex rounded-full bg-pilot-soft px-4 py-2 text-sm font-bold text-pilot-purple">Welcome to UGC Content Factory Kids</div>
+        <h1 className="mt-5 text-4xl font-black tracking-tight text-pilot-ink">Set up your kids story studio.</h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-pilot-muted">
-          Save your provider keys once and UGC Content Factory will reuse them after restarts. These credentials stay on this machine and can be changed later in Settings.
+          Save your OpenAI key and export folder once. UGC Content Factory keeps credentials and story files on this Windows machine.
         </p>
         <div className="mt-6 grid gap-3 text-sm text-pilot-muted md:grid-cols-3">
           <div className="rounded-xl border border-pilot-line p-4">
@@ -37,7 +37,7 @@ export default async function OnboardingPage() {
             <div className="mt-1">Choose where completed videos are saved.</div>
           </div>
         </div>
-        <OnboardingForm openaiConfigured={status.openaiConfigured} googleConfigured={status.googleConfigured} exportsFolder={exportsFolder} />
+        <OnboardingForm openaiConfigured={status.openaiConfigured} exportsFolder={exportsFolder} />
       </Card>
     </div>
   );

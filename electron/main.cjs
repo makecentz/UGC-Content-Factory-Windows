@@ -55,7 +55,7 @@ function redactSecrets(value) {
     .replace(/sk-[A-Za-z0-9_-]{20,}/g, "<redacted>")
     .replace(/AIza[A-Za-z0-9_-]{20,}/g, "<redacted>")
     .replace(/GOCSPX-[A-Za-z0-9_-]{10,}/g, "<redacted>")
-    .replace(/(OPENAI_API_KEY|VEO_API_KEY|GEMINI_API_KEY|GOOGLE_API_KEY|COMFY_CLOUD_API_KEY|YOUTUBE_CLIENT_SECRET|ELEVENLABS_API_KEY)=([^\s]+)/g, "$1=<redacted>");
+    .replace(/(OPENAI_API_KEY|VEO_API_KEY|GEMINI_API_KEY|GOOGLE_API_KEY|YOUTUBE_CLIENT_SECRET|ELEVENLABS_API_KEY)=([^\s]+)/g, "$1=<redacted>");
 }
 
 function initializeLogging() {
@@ -63,7 +63,7 @@ function initializeLogging() {
   ensureDir(logDir);
   logFilePath = path.join(logDir, "reelpilot.log");
   patchConsoleLogging();
-  appendLog("Starting ReelPilot");
+  appendLog("Starting UGC Content Factory Kids");
   appendLog(`appRoot=${appRoot()}`);
   appendLog(`userData=${app.getPath("userData")}`);
 }
@@ -315,16 +315,18 @@ async function verifyServer(port) {
 }
 
 function credentialsAreReady(env) {
-  return Boolean(env.OPENAI_API_KEY && env.COMFY_CLOUD_API_KEY);
+  return Boolean(env.OPENAI_API_KEY);
 }
 
 function createWindow(port, startPath = "/kids") {
+  const iconPath = path.join(appRoot(), "build", "icon.ico");
   const win = new BrowserWindow({
     width: 1440,
     height: 960,
     minWidth: 1120,
     minHeight: 760,
-    title: "UGC Content Factory Windows",
+    title: "UGC Content Factory Kids",
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     backgroundColor: "#ffffff",
     webPreferences: {
       contextIsolation: true,

@@ -1,52 +1,55 @@
 import Link from "next/link";
-import { Clapperboard, Plus, Sparkles, TriangleAlert } from "lucide-react";
+import Image from "next/image";
+import { Clapperboard, Plus, Stars, TriangleAlert } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { GenerateButton } from "@/components/action-buttons";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [totalSeries, totalVideos, readyVideos, failedVideos, scenesGenerated, storyVideos, pendingScenes, failedScenes, latest] = await Promise.all([
-    prisma.series.count(),
-    prisma.video.count(),
-    prisma.video.count({ where: { status: "ready" } }),
-    prisma.video.count({ where: { status: "failed" } }),
-    prisma.scene.count({ where: { status: "ready" } }),
-    prisma.video.count({ where: { mode: "story-video" } }),
-    prisma.scene.count({ where: { status: { in: ["pending", "generating"] } } }),
-    prisma.scene.count({ where: { status: "failed" } }),
-    prisma.video.findMany({ orderBy: { createdAt: "desc" }, take: 5, include: { series: true } })
+  const [totalStories, renderedStories, generatingStories, failedStories, readyScenes, latest] = await Promise.all([
+    prisma.kidsStoryProject.count(),
+    prisma.kidsStoryProject.count({ where: { status: "rendered" } }),
+    prisma.kidsStoryProject.count({ where: { status: "generating" } }),
+    prisma.kidsStoryProject.count({ where: { status: "failed" } }),
+    prisma.kidsStoryScene.count({ where: { status: "ready" } }),
+    prisma.kidsStoryProject.findMany({ orderBy: { updatedAt: "desc" }, take: 5 })
   ]);
 
   const stats = [
-    { label: "Total series", value: totalSeries, icon: Sparkles },
-    { label: "Videos generated", value: totalVideos, icon: Clapperboard },
-    { label: "Ready videos", value: readyVideos, icon: Clapperboard },
-    { label: "Failed videos", value: failedVideos, icon: TriangleAlert },
-    { label: "Scenes generated", value: scenesGenerated, icon: Sparkles },
-    { label: "Story videos", value: storyVideos, icon: Clapperboard },
-    { label: "Pending scene jobs", value: pendingScenes, icon: Sparkles },
-    { label: "Failed scene jobs", value: failedScenes, icon: TriangleAlert }
+    { label: "Kids stories", value: totalStories, icon: Stars },
+    { label: "Completed videos", value: renderedStories, icon: Clapperboard },
+    { label: "Generating", value: generatingStories, icon: Stars },
+    { label: "Failed", value: failedStories, icon: TriangleAlert },
+    { label: "Ready scenes", value: readyScenes, icon: Clapperboard }
   ];
 
   return (
     <>
       <PageHeader
-        title="Dashboard"
-        subtitle="Plan faceless series, generate voiceovers, render vertical videos, and keep exports local."
+        title="Kids Story Dashboard"
+        subtitle="Create child-safe story videos, add intro and outro clips, render locally, and keep exports on this Windows machine."
         action={
           <div className="flex gap-3">
-            <Link href="/series/new" className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-pilot-purple px-4 text-sm font-semibold text-white">
-              <Plus size={17} /> Create New Series
+            <Link href="/kids/new" className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-pilot-purple px-4 text-sm font-semibold text-white">
+              <Plus size={17} /> Create Kids Story
             </Link>
-            <GenerateButton test />
           </div>
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <Card className="mb-8 grid gap-6 md:grid-cols-[160px_1fr]">
+        <Image src="/ugccflogo.png" alt="UGC Content Factory" width={160} height={160} className="h-40 w-40 object-contain" priority />
+        <div className="flex flex-col justify-center">
+          <h2 className="text-2xl font-black">UGC Content Factory Kids</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-pilot-muted">
+            A focused Windows studio for generating kids story videos with local project storage, bundled FFmpeg, intro/outro support, upload details, thumbnails, and completed exports.
+          </p>
+        </div>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-5">
         {stats.map((stat) => (
           <Card key={stat.label}>
             <stat.icon className="mb-4 text-pilot-purple" size={22} />
@@ -58,18 +61,18 @@ export default async function DashboardPage() {
 
       <Card className="mt-8">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-black">Latest generated videos</h2>
-          <Link href="/videos" className="text-sm font-semibold text-pilot-purple">View all</Link>
+          <h2 className="text-lg font-black">Latest kids stories</h2>
+          <Link href="/kids" className="text-sm font-semibold text-pilot-purple">View all</Link>
         </div>
         <div className="divide-y divide-pilot-line">
-          {latest.length === 0 ? <p className="py-8 text-sm text-pilot-muted">No videos yet. Generate a test video when OpenAI and FFmpeg are ready.</p> : null}
-          {latest.map((video) => (
-            <div key={video.id} className="flex items-center justify-between gap-4 py-4">
+          {latest.length === 0 ? <p className="py-8 text-sm text-pilot-muted">No stories yet. Create your first kids story to begin.</p> : null}
+          {latest.map((project) => (
+            <div key={project.id} className="flex items-center justify-between gap-4 py-4">
               <div>
-                <div className="font-semibold">{video.title}</div>
-                <div className="text-sm text-pilot-muted">{video.series.name}</div>
+                <Link href={`/kids/${project.id}`} className="font-semibold hover:text-pilot-purple">{project.title}</Link>
+                <div className="text-sm text-pilot-muted">Ages {project.ageRange} · {project.duration} · {project.aspectRatio}</div>
               </div>
-              <Badge tone={video.status === "ready" ? "ready" : video.status === "failed" ? "failed" : "generating"}>{video.status}</Badge>
+              <Badge tone={project.status === "rendered" ? "ready" : project.status === "failed" ? "failed" : project.status === "generating" ? "generating" : "neutral"}>{project.status}</Badge>
             </div>
           ))}
         </div>

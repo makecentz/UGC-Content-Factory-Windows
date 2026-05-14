@@ -1,15 +1,11 @@
 import Link from "next/link";
-import { BarChart3, BookOpen, Clapperboard, Film, Flame, Home, Plus, Settings, Sparkles, Stars, WandSparkles } from "lucide-react";
+import Image from "next/image";
+import { Clapperboard, Home, Plus, Settings, Stars } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/series", label: "Series", icon: Sparkles },
-  { href: "/videos", label: "Videos", icon: Clapperboard },
-  { href: "/ugc", label: "UGC Studio", icon: WandSparkles },
   { href: "/kids", label: "Kids Stories", icon: Stars },
-  { href: "/drama", label: "Drama Shorts", icon: Film },
-  { href: "/motivational", label: "Motivational Shorts", icon: Flame },
-  { href: "/guides", label: "Guides", icon: BookOpen },
+  { href: "/videos", label: "Completed Videos", icon: Clapperboard },
   { href: "/settings", label: "Settings", icon: Settings }
 ];
 
@@ -17,34 +13,16 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 flex h-screen w-72 flex-col border-r border-pilot-line bg-white p-5">
       <Link href="/dashboard" className="mb-8 flex items-center gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-pilot-purple text-white">
-          <BarChart3 size={21} />
-        </div>
+        <Image src="/ugccflogo.png" alt="UGC Content Factory" width={58} height={58} className="h-14 w-14 object-contain" priority />
         <div>
-          <div className="text-lg font-black">UGC Content Factory</div>
-          <div className="text-xs text-pilot-muted">Faceless video studio</div>
+          <div className="text-lg font-black leading-tight">UGC Content Factory</div>
+          <div className="text-xs text-pilot-muted">Kids story studio</div>
         </div>
       </Link>
 
-      <Link href="/series/new" className="mb-6 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-pilot-purple px-4 text-sm font-semibold text-white hover:bg-[#5d00d8]">
-        <Plus size={17} />
-        Create Series
-      </Link>
-      <Link href="/ugc/new" className="mb-6 -mt-3 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-pilot-line bg-white px-4 text-sm font-semibold text-pilot-ink hover:bg-pilot-soft">
-        <WandSparkles size={17} />
-        New UGC Ad
-      </Link>
-      <Link href="/kids/new" className="mb-6 -mt-3 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-pilot-line bg-white px-4 text-sm font-semibold text-pilot-ink hover:bg-pilot-soft">
+      <Link href="/kids/new" className="mb-6 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-pilot-purple px-4 text-sm font-semibold text-white hover:bg-[#5d00d8]">
         <Stars size={17} />
         New Kids Story
-      </Link>
-      <Link href="/drama/new" className="mb-6 -mt-3 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-pilot-line bg-white px-4 text-sm font-semibold text-pilot-ink hover:bg-pilot-soft">
-        <Film size={17} />
-        New Drama Short
-      </Link>
-      <Link href="/motivational/new" className="mb-6 -mt-3 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-pilot-line bg-white px-4 text-sm font-semibold text-pilot-ink hover:bg-pilot-soft">
-        <Flame size={17} />
-        New Motivational
       </Link>
 
       <nav className="space-y-1">
@@ -58,7 +36,7 @@ export function Sidebar() {
 
       <div className="mt-auto rounded-2xl border border-pilot-line bg-pilot-soft p-4">
         <div className="text-sm font-bold">Local Mode</div>
-        <div className="mt-1 text-xs leading-5 text-pilot-muted">Private Windows workspace. Exports stay on this machine.</div>
+        <div className="mt-1 text-xs leading-5 text-pilot-muted">Private Windows workspace for kids stories. Exports stay on this machine.</div>
       </div>
     </aside>
   );

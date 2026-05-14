@@ -4,7 +4,7 @@
   "private": true,
   "main": "electron/main.cjs",
   "scripts": {
-    "dev": "npm run prepare:media-tools && node scripts/ensure-comfyui.mjs && next dev",
+    "dev": "set DATABASE_URL=file:./dev.db&& npm run prepare:media-tools && prisma migrate deploy && node scripts/ensure-comfyui.mjs && next dev",
     "electron:dev": "electron .",
     "electron:prepare-win-tools": "node scripts/prepare-win-tools.mjs",
     "prepare:media-tools": "node scripts/ensure-media-tools.mjs",
@@ -48,7 +48,7 @@
   },
   "build": {
     "appId": "com.ugccontentfactory.windows",
-    "productName": "UGC Content Factory Windows",
+    "productName": "UGC Content Factory Kids",
     "asar": false,
     "directories": {
       "output": "dist-electron"
@@ -80,6 +80,7 @@
       "postcss.config.js",
       "tailwind.config.ts",
       "tsconfig.json",
+      "build/icon.ico",
       "prisma/**/*",
       "public/**/*",
       "scripts/check-ffmpeg.ts",
@@ -96,6 +97,7 @@
       }
     ],
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",

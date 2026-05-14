@@ -16,11 +16,9 @@ async function readJsonResponse(response: Response) {
 
 export function OnboardingForm({
   openaiConfigured,
-  googleConfigured,
   exportsFolder
 }: {
   openaiConfigured: boolean;
-  googleConfigured: boolean;
   exportsFolder: string;
 }) {
   const router = useRouter();
@@ -42,7 +40,6 @@ export function OnboardingForm({
           body: JSON.stringify({
             action: "save-api-keys",
             openaiApiKey: String(form.get("openaiApiKey") || "").trim(),
-            googleApiKey: String(form.get("googleApiKey") || "").trim(),
             exportsFolder: String(form.get("exportsFolder") || "").trim()
           })
         });
@@ -70,15 +67,6 @@ export function OnboardingForm({
             className="mt-2 h-12 w-full rounded-xl border border-pilot-line px-3 text-sm outline-none focus:border-pilot-purple"
           />
         </label>
-        <label className="text-sm font-semibold text-pilot-ink">
-          Google / Veo API key
-          <input
-            name="googleApiKey"
-            type="password"
-            placeholder={googleConfigured ? "Already saved" : "Optional fallback provider key"}
-            className="mt-2 h-12 w-full rounded-xl border border-pilot-line px-3 text-sm outline-none focus:border-pilot-purple"
-          />
-        </label>
       </div>
       <label className="block text-sm font-semibold text-pilot-ink">
         Default export folder
@@ -90,7 +78,7 @@ export function OnboardingForm({
       </label>
       <div className="flex flex-wrap items-center gap-3">
         <Button disabled={busy}>{busy ? "Saving..." : "Save & Start"}</Button>
-        <span className="text-sm text-pilot-muted">OpenAI: {openaiConfigured ? "Saved" : "Needed"} · Google/Veo: {googleConfigured ? "Saved" : "Optional"}</span>
+        <span className="text-sm text-pilot-muted">OpenAI: {openaiConfigured ? "Saved" : "Needed"}</span>
       </div>
       {message ? <p className="text-sm text-pilot-muted">{message}</p> : null}
     </form>
