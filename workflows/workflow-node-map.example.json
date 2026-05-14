@@ -1,0 +1,22 @@
+{
+  "positivePromptNodeId": "6",
+  "positivePromptInputName": "text",
+  "negativePromptNodeId": "7",
+  "negativePromptInputName": "text",
+  "widthNodeId": "5",
+  "widthInputName": "width",
+  "heightNodeId": "5",
+  "heightInputName": "height",
+  "framesNodeId": "5",
+  "framesInputName": "length",
+  "fpsNodeId": "5",
+  "fpsInputName": "fps",
+  "stepsNodeId": "5",
+  "stepsInputName": "steps",
+  "guidanceNodeId": "5",
+  "guidanceInputName": "guidance",
+  "seedNodeId": "3",
+  "seedInputName": "seed",
+  "referenceImageNodeId": "10",
+  "referenceImageInputName": "image"
+}

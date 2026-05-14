@@ -1,0 +1,150 @@
+{
+  "name": "ugc-content-factory-windows",
+  "version": "1.0.0-beta.0",
+  "private": true,
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "npm run prepare:media-tools && node scripts/ensure-comfyui.mjs && next dev",
+    "electron:dev": "electron .",
+    "electron:prepare-mac-tools": "node scripts/prepare-mac-tools.mjs",
+    "electron:prepare-win-tools": "node scripts/prepare-win-tools.mjs",
+    "prepare:media-tools": "node scripts/ensure-media-tools.mjs",
+    "build": "next build",
+    "dist:mac": "npm run build && npm run electron:prepare-mac-tools && electron-builder --mac dmg pkg zip --arm64 --publish never",
+    "dist:win": "npm run build && npm run electron:prepare-win-tools && set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --win nsis --x64 --publish never",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:studio": "prisma studio",
+    "setup:desktop-icon": "node scripts/create-desktop-launcher.mjs",
+    "check:ffmpeg": "tsx scripts/check-ffmpeg.ts",
+    "postinstall": "prisma generate && node scripts/create-desktop-launcher.mjs --silent"
+  },
+  "dependencies": {
+    "@google/genai": "^1.51.0",
+    "@prisma/client": "5.22.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "next": "16.2.4",
+    "openai": "6.35.0",
+    "prisma": "5.22.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "sharp": "^0.33.5",
+    "tailwind-merge": "^2.5.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "autoprefixer": "^10.4.20",
+    "electron": "^41.4.0",
+    "electron-builder": "^26.8.1",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "16.2.4",
+    "extract-zip": "^2.0.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "build": {
+    "appId": "com.ugccontentfactory.windows",
+    "productName": "UGC Content Factory Windows",
+    "asar": false,
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      ".next/**/*",
+      "!.next/node_modules/**/*",
+      {
+        "from": ".next/node_modules",
+        "to": ".next/node_modules",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/.prisma",
+        "to": ".next/node_modules/.prisma",
+        "filter": [
+          "**/*"
+        ]
+      },
+      "app/**/*",
+      "components/**/*",
+      "electron/**/*",
+      "lib/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "next.config.ts",
+      "postcss.config.js",
+      "tailwind.config.ts",
+      "tsconfig.json",
+      "prisma/**/*",
+      "public/**/*",
+      "scripts/check-ffmpeg.ts",
+      "storage/**/.gitkeep",
+      "workflows/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor",
+        "to": "vendor",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "UGC-Content-Factory-Windows-Setup-${version}-${arch}.${ext}",
+      "signAndEditExecutable": false
+    },
+    "mac": {
+      "icon": "build/icon.icns",
+      "identity": "Ecommerce Experts LLC (HL2YSQY7FX)",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "pkg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "ReelPilot-${version}-${arch}.${ext}"
+    },
+    "pkg": {
+      "identity": "Ecommerce Experts LLC (HL2YSQY7FX)",
+      "installLocation": "/Applications"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
+    }
+  }
+}

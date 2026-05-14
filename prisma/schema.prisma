@@ -1,0 +1,451 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Series {
+  id              String   @id @default(cuid())
+  name            String
+  niche           String
+  customNiche     String?
+  language        String   @default("English")
+  voice           String
+  artStyle        String
+  captionStyle    String
+  backgroundMusic String?
+  effects         String   @default("[]")
+  videoDuration   String
+  scheduleTime    String?
+  postingFrequency String
+  autoGenerate    Boolean  @default(false)
+  platforms       String   @default("[]")
+  generationMode  String   @default("story-video")
+  videoProvider   String   @default("comfy-cloud")
+  useSceneConsistency Boolean @default(true)
+  preferredSceneDuration Int @default(5)
+  transitionStyle String   @default("hard cut")
+  storyboardEnabled Boolean @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  videos          Video[]
+}
+
+model Video {
+  id              String   @id @default(cuid())
+  seriesId        String
+  series          Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  title           String
+  script          String
+  hook            String?
+  description     String?
+  hashtags        String?
+  voiceoverPath   String?
+  backgroundPath  String?
+  musicPath       String?
+  captionsPath    String?
+  finalVideoPath  String?
+  mode            String   @default("background")
+  storyboardJson  String?
+  characterBibleJson String?
+  styleLockJson   String?
+  finalRenderStatus String?
+  renderLogsJson  String?
+  status          String   @default("draft")
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  scheduledFor    DateTime?
+  scenes          Scene[]
+}
+
+model Scene {
+  id                String   @id @default(cuid())
+  videoId           String
+  video             Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  sceneNumber       Int
+  narration         String
+  prompt            String
+  visualDescription String?
+  camera            String?
+  mood              String?
+  duration          Float
+  startTime         Float
+  endTime           Float
+  provider          String?
+  providerJobId     String?
+  clipPath          String?
+  imagePath         String?
+  status            String   @default("pending")
+  approved          Boolean  @default(false)
+  retryCount        Int      @default(0)
+  lastRetryAt       DateTime?
+  editedPrompt      String?
+  qualityReportJson String?
+  errorMessage      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([videoId, sceneNumber])
+}
+
+model MusicTrack {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  filePath    String
+  mood        String?
+  createdAt   DateTime @default(now())
+}
+
+model Asset {
+  id        String   @id @default(cuid())
+  type      String
+  filePath  String
+  createdAt DateTime @default(now())
+}
+
+model Settings {
+  id                   String   @id @default(cuid())
+  openaiApiKeySaved    Boolean  @default(false)
+  comfyCloudApiKeySaved Boolean @default(false)
+  defaultVoice         String   @default("onyx")
+  defaultVideoDuration String   @default("20-30 seconds")
+  exportsFolder        String   @default("./storage/exports")
+  watermarkPath        String?
+  watermarkEnabled     Boolean  @default(false)
+  watermarkPosition    String   @default("bottom-right")
+  watermarkOpacity     Float    @default(0.7)
+  comfyEnabled         Boolean  @default(false)
+  comfyServerUrl       String   @default("http://127.0.0.1:8188")
+  comfyWanVersion      String   @default("wan22")
+  comfyWorkflowType    String   @default("text-to-video")
+  comfyWorkflowPath    String?
+  comfyCloudWorkflowPath String?
+  comfyCloudFallbackProvider String @default("veo3")
+  comfyNodeMapJson     String?
+  comfyInstallFolder   String?
+  comfyPythonPath      String?
+  comfyLaunchCommand   String   @default("python main.py --listen 127.0.0.1 --port 8188")
+  comfyAutoStart       Boolean  @default(false)
+  comfyLocalDraftMode  Boolean  @default(false)
+  comfyFallbackProvider String  @default("veo3")
+  comfyDefaultWidth    Int      @default(576)
+  comfyDefaultHeight   Int      @default(1024)
+  comfyDefaultFrames   Int      @default(81)
+  comfyDefaultFps      Int      @default(16)
+  comfyDefaultSteps    Int      @default(20)
+  comfyDefaultGuidance Float    @default(5)
+  comfySeedMode        String   @default("random")
+  comfyTimeoutMinutes  Int      @default(45)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model UGCProject {
+  id                 String   @id @default(cuid())
+  title              String
+  productUrl         String?
+  productName        String
+  productCategory    String
+  productDescription String
+  productBenefits    String
+  offerText          String?
+  ctaText            String?
+  targetAudience     String?
+  creatorName        String?
+  creatorVibe        String?
+  creatorGender      String?
+  creatorAgeRange    String?
+  tone               String
+  style              String
+  duration           String
+  platform           String
+  voice              String
+  videoProvider      String   @default("comfy-cloud")
+  captionsEnabled    Boolean  @default(true)
+  musicEnabled       Boolean  @default(false)
+  brief              String
+  hook               String?
+  script             String?
+  storyboardJson     String?
+  creatorProfileJson String?
+  productProfileJson String?
+  status             String   @default("draft")
+  finalVideoPath     String?
+  thumbnailPath      String?
+  voiceoverPath      String?
+  captionsPath       String?
+  errorMessage       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  assets             UGCAsset[]
+  scenes             UGCScene[]
+}
+
+model ProviderJobLog {
+  id             String   @id @default(cuid())
+  provider       String
+  projectType    String?
+  ownerId        String?
+  prompt         String
+  negativePrompt String?
+  workflowPath   String?
+  promptId       String?
+  startedAt      DateTime @default(now())
+  completedAt    DateTime?
+  status         String   @default("pending")
+  error          String?
+  outputPath     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([provider, ownerId])
+}
+
+model UGCAsset {
+  id               String     @id @default(cuid())
+  ugcProjectId     String
+  ugcProject       UGCProject @relation(fields: [ugcProjectId], references: [id], onDelete: Cascade)
+  type             String
+  filePath         String
+  originalFileName String?
+  createdAt        DateTime   @default(now())
+
+  @@index([ugcProjectId, type])
+}
+
+model UGCScene {
+  id                String     @id @default(cuid())
+  ugcProjectId      String
+  ugcProject        UGCProject @relation(fields: [ugcProjectId], references: [id], onDelete: Cascade)
+  sceneNumber       Int
+  narration         String
+  prompt            String
+  visualDescription String?
+  shotType          String?
+  camera            String?
+  mood              String?
+  duration          Float
+  startTime         Float
+  endTime           Float
+  provider          String?
+  providerJobId     String?
+  clipPath          String?
+  status            String     @default("pending")
+  approved          Boolean    @default(false)
+  errorMessage      String?
+  editedPrompt      String?
+  retryCount        Int        @default(0)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@index([ugcProjectId, sceneNumber])
+}
+
+model KidsStoryProject {
+  id                 String   @id @default(cuid())
+  title              String
+  sourceType         String   @default("prompt")
+  youtubeUrl         String?
+  sourceTranscript   String?
+  prompt             String?
+  ageRange           String   @default("4-8")
+  storyTheme         String?
+  moral              String?
+  artStyle           String   @default("Bright storybook animation")
+  characterMode      String   @default("ai")
+  duration           String   @default("3 min")
+  aspectRatio        String   @default("16:9")
+  voiceProvider      String   @default("openai")
+  voice              String   @default("Nova - warm storyteller")
+  videoProvider      String   @default("openai-image")
+  introVideoPath     String?
+  outroVideoPath     String?
+  youtubeDescription String?
+  youtubeTags        String?
+  thumbnailPath      String?
+  youtubeChannelId   String?
+  youtubeVideoId     String?
+  youtubeVideoUrl    String?
+  youtubeUploadStatus String?
+  youtubeUploadedAt  DateTime?
+  script             String?
+  storyboardJson     String?
+  status             String   @default("draft")
+  finalVideoPath     String?
+  voiceoverPath      String?
+  errorMessage       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  assets             KidsStoryAsset[]
+  scenes             KidsStoryScene[]
+}
+
+model YouTubeChannelConnection {
+  id                  String   @id @default(cuid())
+  channelId           String   @unique
+  channelTitle        String
+  channelThumbnailUrl String?
+  accessToken         String
+  refreshToken        String?
+  tokenExpiresAt      DateTime?
+  scope               String?
+  selected            Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([selected])
+}
+
+model KidsStoryAsset {
+  id                 String           @id @default(cuid())
+  kidsStoryProjectId String
+  kidsStoryProject   KidsStoryProject @relation(fields: [kidsStoryProjectId], references: [id], onDelete: Cascade)
+  type               String
+  filePath           String
+  originalFileName   String?
+  createdAt          DateTime         @default(now())
+
+  @@index([kidsStoryProjectId, type])
+}
+
+model KidsStoryScene {
+  id                 String           @id @default(cuid())
+  kidsStoryProjectId String
+  kidsStoryProject   KidsStoryProject @relation(fields: [kidsStoryProjectId], references: [id], onDelete: Cascade)
+  sceneNumber        Int
+  narration          String
+  prompt             String
+  visualDescription  String?
+  camera             String?
+  mood               String?
+  duration           Float
+  startTime          Float
+  endTime            Float
+  provider           String?
+  providerJobId      String?
+  clipPath           String?
+  imagePath          String?
+  voiceoverPath      String?
+  status             String           @default("pending")
+  approved           Boolean          @default(false)
+  editedPrompt       String?
+  retryCount         Int              @default(0)
+  errorMessage       String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([kidsStoryProjectId, sceneNumber])
+}
+
+model DramaShortProject {
+  id             String   @id @default(cuid())
+  title          String
+  description    String
+  style          String   @default("8K photorealistic suspense drama")
+  duration       String   @default("30 sec")
+  voice          String   @default("Onyx - tense narrator")
+  videoProvider  String   @default("comfy-cloud")
+  script         String?
+  hook           String?
+  caption        String?
+  characterBibleJson String?
+  storyboardJson String?
+  status         String   @default("draft")
+  finalVideoPath String?
+  voiceoverPath  String?
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  scenes         DramaShortScene[]
+}
+
+model DramaShortScene {
+  id                  String            @id @default(cuid())
+  dramaShortProjectId String
+  dramaShortProject   DramaShortProject @relation(fields: [dramaShortProjectId], references: [id], onDelete: Cascade)
+  sceneNumber         Int
+  narration           String
+  prompt              String
+  visualDescription   String?
+  camera              String?
+  mood                String?
+  duration            Float
+  startTime           Float
+  endTime             Float
+  provider            String?
+  providerJobId       String?
+  clipPath            String?
+  status              String            @default("pending")
+  approved            Boolean           @default(false)
+  editedPrompt        String?
+  retryCount          Int               @default(0)
+  errorMessage        String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([dramaShortProjectId, sceneNumber])
+}
+
+model MotivationalShortProject {
+  id               String   @id @default(cuid())
+  title            String
+  sourceType       String   @default("prompt")
+  youtubeUrl       String?
+  sourceTranscript String?
+  prompt           String?
+  pastedScript     String?
+  topic            String?
+  tone             String   @default("intense")
+  style            String   @default("8K photorealistic dramatic motivational cinematic video")
+  duration         String   @default("30 sec")
+  voice            String   @default("Onyx - powerful male narrator")
+  videoProvider    String   @default("comfy-cloud")
+  captionsEnabled  Boolean  @default(false)
+  captionsPath     String?
+  captionStyle     String   @default("Bold Stroke")
+  watermarkPath     String?
+  watermarkPosition String   @default("bottom-right")
+  hook             String?
+  script           String?
+  caption          String?
+  storyboardJson   String?
+  status           String   @default("draft")
+  finalVideoPath   String?
+  voiceoverPath    String?
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  scenes           MotivationalShortScene[]
+}
+
+model MotivationalShortScene {
+  id                         String                   @id @default(cuid())
+  motivationalShortProjectId String
+  motivationalShortProject   MotivationalShortProject @relation(fields: [motivationalShortProjectId], references: [id], onDelete: Cascade)
+  sceneNumber                Int
+  narration                  String
+  prompt                     String
+  visualDescription          String?
+  camera                     String?
+  mood                       String?
+  duration                   Float
+  startTime                  Float
+  endTime                    Float
+  provider                   String?
+  providerJobId              String?
+  clipPath                   String?
+  status                     String                   @default("pending")
+  approved                   Boolean                  @default(false)
+  editedPrompt               String?
+  retryCount                 Int                      @default(0)
+  errorMessage               String?
+  createdAt                  DateTime                 @default(now())
+  updatedAt                  DateTime                 @updatedAt
+
+  @@index([motivationalShortProjectId, sceneNumber])
+}

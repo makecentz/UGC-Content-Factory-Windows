@@ -1,0 +1,8 @@
+{
+  "_comment": "Placeholder only. Replace with a real ComfyUI API-format Wan 2.1 image-to-video workflow exported from ComfyUI.",
+  "6": { "class_type": "CLIPTextEncode", "inputs": { "text": "PROMPT" } },
+  "7": { "class_type": "CLIPTextEncode", "inputs": { "text": "NEGATIVE_PROMPT" } },
+  "5": { "class_type": "WanVideoSettings", "inputs": { "width": 576, "height": 1024, "length": 81, "fps": 16, "steps": 20, "guidance": 5 } },
+  "3": { "class_type": "KSampler", "inputs": { "seed": 1 } },
+  "10": { "class_type": "LoadImage", "inputs": { "image": "REFERENCE_IMAGE" } }
+}
