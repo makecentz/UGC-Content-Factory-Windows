@@ -46,7 +46,7 @@ export default async function SettingsPage() {
             <div><span className="font-semibold text-pilot-ink">Veo:</span> {status.googleConfigured ? "Configured" : "Missing"}</div>
             <div><span className="font-semibold text-pilot-ink">Exports:</span> {exportsFolder}</div>
           </div>
-          <p className="mt-4 text-sm leading-6 text-pilot-muted">Comfy Local with Wan 2.2 is the only video render provider shown in creation flows. Configure the local server and workflow below before rendering.</p>
+          <p className="mt-4 text-sm leading-6 text-pilot-muted">Comfy Local with Wan 2.2 is the video render provider shown in creation flows. Select your exported local Wan workflow for best motion, or use the bundled local Comfy fallback while you set up Wan.</p>
         </Card>
         <Card>
           <h2 className="text-lg font-black">Local ComfyUI + Wan Rendering</h2>

@@ -1,0 +1,60 @@
+{
+  "_comment": "Bundled local Comfy fallback for image-to-video requests. This generates a ComfyUI image with standard nodes, then UGC Content Factory animates it into an MP4 clip. For full Wan image-to-video motion, select your exported local Wan workflow JSON in Settings.",
+  "4": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {
+      "ckpt_name": "REELPILOT_CHECKPOINT"
+    }
+  },
+  "1": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "REELPILOT_PROMPT",
+      "clip": ["4", 1]
+    }
+  },
+  "2": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "REELPILOT_NEGATIVE_PROMPT",
+      "clip": ["4", 1]
+    }
+  },
+  "5": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {
+      "width": 576,
+      "height": 1024,
+      "batch_size": 1
+    }
+  },
+  "3": {
+    "class_type": "KSampler",
+    "inputs": {
+      "seed": 1,
+      "steps": 20,
+      "cfg": 7,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 1,
+      "model": ["4", 0],
+      "positive": ["1", 0],
+      "negative": ["2", 0],
+      "latent_image": ["5", 0]
+    }
+  },
+  "6": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": ["3", 0],
+      "vae": ["4", 2]
+    }
+  },
+  "7": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "filename_prefix": "UGCContentFactory/wan22-image-fallback",
+      "images": ["6", 0]
+    }
+  }
+}

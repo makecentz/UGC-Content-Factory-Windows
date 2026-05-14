@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { validateComfyWorkflowForLocalRender } from "./workflow-validator";
@@ -91,6 +91,76 @@ function isExplicitLocalWorkflowFile(filePath: string) {
   return fileName.startsWith("local-") || fileName.includes("-local-") || fileName.includes(".local.");
 }
 
+function safeReadJson(filePath: string) {
+  try {
+    return JSON.parse(readFileSync(filePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function walkJsonFiles(root: string, maxFiles = 200) {
+  const files: string[] = [];
+  const seen = new Set<string>();
+
+  function walk(current: string, depth: number) {
+    if (files.length >= maxFiles || depth > 5 || seen.has(current) || !existsSync(current)) return;
+    seen.add(current);
+    let entries;
+    try {
+      entries = readdirSync(current, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath, depth + 1);
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith(".json")) {
+        files.push(fullPath);
+        if (files.length >= maxFiles) return;
+      }
+    }
+  }
+
+  walk(root, 0);
+  return files;
+}
+
+async function discoverLocalWorkflow(wanVersion: WanVersion, workflowType: WorkflowType) {
+  const settings = await prisma.settings.findFirst();
+  const roots = [
+    settings?.comfyWorkflowPath ? path.dirname(settings.comfyWorkflowPath) : "",
+    settings?.comfyInstallFolder ? path.join(settings.comfyInstallFolder, "user", "default", "workflows") : "",
+    settings?.comfyInstallFolder ? path.join(settings.comfyInstallFolder, "workflows") : "",
+    settings?.comfyInstallFolder,
+    ...workflowRootCandidates()
+  ].filter(Boolean) as string[];
+  const uniqueRoots = [...new Set(roots)].filter((root) => existsSync(root) && statSync(root).isDirectory());
+  const preferredTerms = [wanVersion.replace("wan", "wan "), wanVersion, "wan", workflowType.replace(/-/g, " ")];
+
+  for (const root of uniqueRoots) {
+    const candidates = walkJsonFiles(root)
+      .filter((filePath) => {
+        const lower = filePath.toLowerCase();
+        return lower.includes("wan") && !lower.includes("api-example") && !lower.includes("cloud");
+      })
+      .sort((a, b) => {
+        const aScore = preferredTerms.filter((term) => a.toLowerCase().includes(term)).length;
+        const bScore = preferredTerms.filter((term) => b.toLowerCase().includes(term)).length;
+        return bScore - aScore;
+      });
+    for (const candidate of candidates) {
+      const workflow = safeReadJson(candidate);
+      if (!workflow) continue;
+      const validation = validateComfyWorkflowForLocalRender(workflow);
+      if (validation.ok) return candidate;
+    }
+  }
+
+  return "";
+}
+
 export async function getWorkflowNodeMap(): Promise<WorkflowNodeMap> {
   const settings = await prisma.settings.findFirst();
   if (!settings?.comfyNodeMapJson) return defaultMap;
@@ -116,9 +186,12 @@ export async function loadWorkflowTemplate({
 }) {
   const customWorkflowPath = customPath?.trim();
   const hasCustomPath = Boolean(customWorkflowPath) && (workflowType === "custom-workflow" || requireLocalWorkflow);
+  const discoveredLocalPath = !hasCustomPath && requireLocalWorkflow ? await discoverLocalWorkflow(wanVersion, workflowType) : "";
   const filePath =
     hasCustomPath
       ? path.resolve(customWorkflowPath as string)
+      : discoveredLocalPath
+        ? discoveredLocalPath
       : findWorkflowFile(wanVersion, workflowType, requireLocalWorkflow);
   if (!existsSync(filePath)) {
     const localHint = requireLocalWorkflow
@@ -162,9 +235,7 @@ function stripWorkflowMetadata(workflow: unknown) {
 function setMappedInput(workflow: any, nodeId?: string, inputName?: string, value?: unknown) {
   if (!nodeId || !inputName || value === undefined || value === null) return;
   const node = workflow[nodeId];
-  if (!node?.inputs) {
-    throw new Error(`Node mapping failed for node ${nodeId}.${inputName}. Match the node IDs from your ComfyUI workflow.`);
-  }
+  if (!node?.inputs || !(inputName in node.inputs)) return;
   node.inputs[inputName] = value;
 }
 

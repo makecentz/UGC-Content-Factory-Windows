@@ -2,10 +2,10 @@ import { existsSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
-import { normalizeVideoClip } from "@/lib/ffmpeg";
+import { normalizeVideoClip, renderVerticalVideo } from "@/lib/ffmpeg";
 import { storagePath } from "@/lib/storage";
 import type { GenerateSceneClipInput, SceneClipJob, SceneClipStatus, VideoProvider } from "./video-provider";
-import { downloadOutputFile, findOutputFilesFromHistory, getExecutionErrorFromHistory, submitPrompt, waitForPromptCompletion } from "./comfyui/comfyui-client";
+import { downloadOutputFile, findOutputFilesFromHistory, getExecutionErrorFromHistory, getObjectInfo, submitPrompt, waitForPromptCompletion } from "./comfyui/comfyui-client";
 import {
   getWorkflowNodeMap,
   injectDurationIntoWorkflow,
@@ -27,6 +27,7 @@ type WanJob = {
   outputPath?: string;
   logId?: string;
   aspectRatio?: "9:16" | "16:9";
+  duration?: number;
 };
 
 const jobs = new Map<string, WanJob>();
@@ -40,6 +41,35 @@ function outputExtension(filename: string) {
 
 function isVideoFile(fileName: string) {
   return /\.(mp4|mov|webm|mkv|avi)$/i.test(fileName);
+}
+
+function isImageFile(fileName: string) {
+  return /\.(png|jpg|jpeg|webp)$/i.test(fileName);
+}
+
+function fileExtension(filename: string) {
+  const extension = path.extname(filename).toLowerCase();
+  return extension || ".bin";
+}
+
+function firstChoice(objectInfo: any, classType: string, inputName: string) {
+  const choices = objectInfo?.[classType]?.input?.required?.[inputName]?.[0];
+  return Array.isArray(choices) && choices.length ? choices[0] : "";
+}
+
+async function hydrateBundledComfyWorkflow(workflow: any) {
+  const objectInfo = await getObjectInfo();
+  const checkpoint = firstChoice(objectInfo, "CheckpointLoaderSimple", "ckpt_name");
+  for (const node of Object.values(workflow) as any[]) {
+    if (!node?.inputs) continue;
+    if (node.class_type === "CheckpointLoaderSimple" && (!node.inputs.ckpt_name || String(node.inputs.ckpt_name).includes("REELPILOT_CHECKPOINT"))) {
+      if (!checkpoint) {
+        throw new Error("ComfyUI is running, but no checkpoint is installed. Add a model checkpoint in ComfyUI/models/checkpoints or select your local Wan workflow in Settings.");
+      }
+      node.inputs.ckpt_name = checkpoint;
+    }
+  }
+  return workflow;
 }
 
 async function settingsForProvider(version: WanVersion) {
@@ -116,6 +146,7 @@ export function createLocalComfyWanProvider(version: WanVersion): VideoProvider 
       injectDurationIntoWorkflow(workflow, input.duration, map);
       injectSeedIntoWorkflow(workflow, seed, map);
       injectReferenceImageIntoWorkflow(workflow, referenceImage, map);
+      workflow = await hydrateBundledComfyWorkflow(workflow);
 
       const log = await prisma.providerJobLog.create({
         data: {
@@ -134,7 +165,7 @@ export function createLocalComfyWanProvider(version: WanVersion): VideoProvider 
 
       try {
         const result = await submitPrompt(workflow);
-        jobs.set(result.promptId, { status: { status: "generating", progress: 10 }, logId: log.id, aspectRatio: input.aspectRatio });
+        jobs.set(result.promptId, { status: { status: "generating", progress: 10 }, logId: log.id, aspectRatio: input.aspectRatio, duration: input.duration });
         await prisma.providerJobLog.update({ where: { id: log.id }, data: { promptId: result.promptId, status: "generating" } });
         return { jobId: result.promptId };
       } catch (error) {
@@ -156,9 +187,9 @@ export function createLocalComfyWanProvider(version: WanVersion): VideoProvider 
         const executionError = getExecutionErrorFromHistory(history);
         if (executionError) throw new Error(executionError);
         const files = findOutputFilesFromHistory(history);
-        const selected = files.find((file) => isVideoFile(file.filename));
-        if (!selected) throw new Error("No generated video found. Check your ComfyUI output folder and workflow save node. Image sequences are not converted yet.");
-        const rawOutputPath = storagePath("comfyui/outputs", `${jobId}${outputExtension(selected.filename)}`);
+        const selected = files.find((file) => isVideoFile(file.filename)) || files.find((file) => isImageFile(file.filename));
+        if (!selected) throw new Error("No generated video or image found. Check your ComfyUI output folder and workflow save node.");
+        const rawOutputPath = storagePath("comfyui/outputs", `${jobId}${fileExtension(selected.filename)}`);
         await downloadOutputFile(selected, rawOutputPath);
         jobs.set(jobId, { ...job, rawOutputPath, status: { status: "ready", progress: 100, downloadUrl: rawOutputPath } });
         if (job?.logId) {
@@ -180,7 +211,17 @@ export function createLocalComfyWanProvider(version: WanVersion): VideoProvider 
         throw new Error("Local Wan clip is not ready to download yet.");
       }
       const normalizedPath = outputPath || storagePath("scenes/local-wan", `${jobId}.mp4`);
-      await normalizeVideoClip(job.rawOutputPath, normalizedPath, job.aspectRatio || "9:16");
+      if (isImageFile(job.rawOutputPath)) {
+        await renderVerticalVideo({
+          backgroundPath: job.rawOutputPath,
+          outputPath: normalizedPath,
+          durationSeconds: job.duration || 5,
+          effects: ["Zoom motion"],
+          aspectRatio: job.aspectRatio || "9:16"
+        });
+      } else {
+        await normalizeVideoClip(job.rawOutputPath, normalizedPath, job.aspectRatio || "9:16");
+      }
       jobs.set(jobId, { ...job, outputPath: normalizedPath, status: { status: "ready", progress: 100, downloadUrl: normalizedPath } });
       if (job.logId) {
         await prisma.providerJobLog.update({ where: { id: job.logId }, data: { outputPath: normalizedPath } });
