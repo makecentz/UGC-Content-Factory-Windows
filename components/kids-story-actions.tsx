@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "./ui";
 
 async function readJsonResponse(response: Response) {
@@ -158,7 +158,7 @@ export function KidsStoryActions({ id, finalVideoPath }: { id: string; finalVide
           {busy === "render" ? "Rendering..." : "Render Final"}
         </Button>
         <Button variant="secondary" disabled={busy === "youtube"} onClick={() => act("youtube", `/api/kids/${id}/youtube-package`)}>
-          {busy === "youtube" ? "Creating..." : "Create YouTube Package"}
+          {busy === "youtube" ? "Creating..." : "Create Upload Details"}
         </Button>
         <Button variant="secondary" disabled={!finalVideoPath || busy === "open"} onClick={() => act("open", "/api/videos/open", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: finalVideoPath }) })}>
           Open Export
@@ -179,138 +179,34 @@ export function KidsStoryActions({ id, finalVideoPath }: { id: string; finalVide
   );
 }
 
-type YouTubeChannel = {
-  id: string;
-  channelId: string;
-  channelTitle: string;
-  channelThumbnailUrl?: string | null;
-  selected: boolean;
-};
-
-export function KidsStoryYouTubePublisher({
-  id,
-  finalVideoPath,
-  youtubeDescription,
-  youtubeTags,
-  thumbnailPath,
-  youtubeVideoUrl,
-  youtubeUploadStatus
-}: {
-  id: string;
-  finalVideoPath?: string | null;
-  youtubeDescription?: string | null;
-  youtubeTags?: string | null;
-  thumbnailPath?: string | null;
-  youtubeVideoUrl?: string | null;
-  youtubeUploadStatus?: string | null;
-}) {
-  const [channels, setChannels] = useState<YouTubeChannel[]>([]);
-  const [selectedId, setSelectedId] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
+export function KidsStoryUploadDetailsButton({ id }: { id: string }) {
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const router = useRouter();
-  const readyToUpload = Boolean(finalVideoPath && youtubeDescription && youtubeTags && thumbnailPath);
-
-  async function loadChannels() {
-    const response = await fetch("/api/youtube/channels", { cache: "no-store" });
-    const data = await readJsonResponse(response);
-    if (!response.ok || data.error) {
-      setMessage(data.error || "Could not load YouTube channels.");
-      return;
-    }
-    const nextChannels = Array.isArray(data.channels) ? data.channels : [];
-    setChannels(nextChannels);
-    const selected = nextChannels.find((channel: YouTubeChannel) => channel.selected) || nextChannels[0];
-    if (selected) setSelectedId(selected.id);
-  }
-
-  async function selectChannel(idToSelect: string) {
-    setSelectedId(idToSelect);
-    const response = await fetch("/api/youtube/channels", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: idToSelect })
-    });
-    const data = await readJsonResponse(response);
-    if (!response.ok || data.error) {
-      setMessage(data.error || "Could not select that YouTube channel.");
-      return;
-    }
-    await loadChannels();
-  }
-
-  async function upload() {
-    setBusy("upload");
-    setMessage("Uploading to YouTube...");
-    const response = await fetch(`/api/kids/${id}/youtube-upload`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ connectionId: selectedId })
-    });
-    const data = await readJsonResponse(response);
-    setBusy(null);
-    if (!response.ok || data.error) {
-      setMessage(data.error || "YouTube upload failed.");
-      return;
-    }
-    setMessage("Uploaded to YouTube.");
-    router.refresh();
-  }
-
-  useEffect(() => {
-    loadChannels();
-  }, []);
 
   return (
-    <div className="space-y-4 rounded-xl border border-pilot-line p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-black text-pilot-ink">Publish to YouTube</h3>
-          <p className="mt-1 text-xs text-pilot-muted">Uploads the final video with this title, description, tags, and thumbnail.</p>
-        </div>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => {
-            window.location.href = `/api/youtube/connect?returnTo=${encodeURIComponent(`/kids/${id}`)}`;
-          }}
-        >
-          Connect Channel
-        </Button>
-      </div>
-
-      {channels.length > 0 ? (
-        <div className="flex flex-col gap-3 md:flex-row">
-          <select
-            value={selectedId}
-            onChange={(event) => selectChannel(event.currentTarget.value)}
-            className="h-11 flex-1 rounded-xl border border-pilot-line px-3 text-sm"
-          >
-            {channels.map((channel) => (
-              <option key={channel.id} value={channel.id}>
-                {channel.channelTitle}
-              </option>
-            ))}
-          </select>
-          <Button type="button" disabled={!readyToUpload || !selectedId || busy === "upload"} onClick={upload}>
-            {busy === "upload" ? "Uploading..." : "Upload to YouTube"}
-          </Button>
-        </div>
-      ) : (
-        <p className="text-sm text-pilot-muted">No channel connected yet.</p>
-      )}
-
-      {!readyToUpload ? (
-        <p className="text-xs text-pilot-muted">Render the final video and create the YouTube package before uploading.</p>
-      ) : null}
-      {youtubeVideoUrl ? (
-        <a href={youtubeVideoUrl} target="_blank" rel="noreferrer" className="block text-sm font-semibold text-pilot-purple">
-          Open uploaded video
-        </a>
-      ) : youtubeUploadStatus ? (
-        <p className="text-sm text-pilot-muted">Upload status: {youtubeUploadStatus}</p>
-      ) : null}
-      {message ? <p className={`text-sm ${message.includes("failed") || message.includes("Could") ? "text-red-700" : "text-pilot-muted"}`}>{message}</p> : null}
+    <div className="space-y-2">
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setMessage("");
+          const response = await fetch(`/api/kids/${id}/youtube-package`, { method: "POST" });
+          const data = await readJsonResponse(response);
+          setBusy(false);
+          if (!response.ok || data.error) {
+            setMessage(data.error || "Could not create upload details.");
+            return;
+          }
+          setMessage("Upload details are ready.");
+          router.refresh();
+        }}
+      >
+        {busy ? "Creating..." : "Create Upload Details"}
+      </Button>
+      {message ? <p className={`text-sm ${message.startsWith("Could") ? "text-red-700" : "text-pilot-muted"}`}>{message}</p> : null}
     </div>
   );
 }

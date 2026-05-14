@@ -7,7 +7,6 @@ import { ensureStorage, safeFileName, storagePath } from "@/lib/storage";
 import { generateKidsStoryboardImage, renderKidsImageClip } from "./image-storyboard";
 import { generateKidsStoryPlan } from "./script-generator";
 import { transcribeYouTubeUrl } from "./youtube";
-import { generateKidsYoutubePackage } from "./youtube-package";
 import { generateKidsVoiceover } from "./voice";
 
 type KidsAspectRatio = "9:16" | "16:9";
@@ -165,13 +164,7 @@ export async function renderKidsStoryFinal(projectId: string) {
 
   const renderedProject = await prisma.kidsStoryProject.update({ where: { id: project.id }, data: { status: "rendered", finalVideoPath: outputPath, errorMessage: null } });
   await logInfo("Kids final render completed", { projectId: project.id, outputPath, sceneCount: usable.length, hasIntro: Boolean(introPath), hasOutro: Boolean(outroPath) });
-  try {
-    return await generateKidsYoutubePackage(project.id);
-  } catch (error) {
-    await logError("Kids YouTube package generation skipped after final render", error, { projectId: project.id });
-    console.warn("[ReelPilot] YouTube package generation skipped after render", error);
-    return renderedProject;
-  }
+  return renderedProject;
 }
 
 export async function generateKidsStory(projectId: string) {

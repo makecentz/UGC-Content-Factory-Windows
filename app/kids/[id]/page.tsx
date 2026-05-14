@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
-import { KidsStoryActions, KidsStoryBumperForm, KidsStoryYouTubePublisher } from "@/components/kids-story-actions";
+import { KidsStoryActions, KidsStoryBumperForm, KidsStoryUploadDetailsButton } from "@/components/kids-story-actions";
 import { Badge, Card } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
 import { toPublicFileUrl } from "@/lib/storage";
@@ -26,11 +26,9 @@ export default async function KidsStoryDetailPage({ params }: Props) {
   if (!project) notFound();
 
   const finalUrl = toPublicFileUrl(project.finalVideoPath);
-  const thumbnailUrl = toPublicFileUrl(project.thumbnailPath);
   const aspectRatio = project.aspectRatio === "9:16" ? "9:16" : "16:9";
   const previewAspectClass = aspectRatio === "9:16" ? "aspect-[9/16] max-h-[720px] w-full max-w-sm mx-auto" : "aspect-video";
   const scenePreviewClass = aspectRatio === "9:16" ? "aspect-[9/16] w-40" : "aspect-video w-72";
-  const thumbnailAspectClass = aspectRatio === "9:16" ? "aspect-[9/16] max-h-[520px] w-full max-w-xs mx-auto" : "aspect-video";
 
   return (
     <>
@@ -43,7 +41,27 @@ export default async function KidsStoryDetailPage({ params }: Props) {
       <div className="grid gap-6 xl:grid-cols-[520px_1fr]">
         <div className="space-y-6">
           <Card>
-	            <div className={`${previewAspectClass} overflow-hidden rounded-xl bg-pilot-soft`}>
+            <h2 className="text-lg font-black">Step 1: Intro / Outro Videos</h2>
+            <p className="mt-1 text-sm text-pilot-muted">Upload optional bumper videos before generating or rendering the final story.</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {project.introVideoPath ? (
+                <video src={toPublicFileUrl(project.introVideoPath) || ""} controls className={`${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} w-full rounded-xl bg-pilot-soft object-cover`} />
+              ) : (
+                <div className={`grid ${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} place-items-center rounded-xl bg-pilot-soft text-sm text-pilot-muted`}>No intro</div>
+              )}
+              {project.outroVideoPath ? (
+                <video src={toPublicFileUrl(project.outroVideoPath) || ""} controls className={`${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} w-full rounded-xl bg-pilot-soft object-cover`} />
+              ) : (
+                <div className={`grid ${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} place-items-center rounded-xl bg-pilot-soft text-sm text-pilot-muted`}>No outro</div>
+              )}
+            </div>
+            <div className="mt-4">
+              <KidsStoryBumperForm id={project.id} introVideoPath={project.introVideoPath} outroVideoPath={project.outroVideoPath} />
+            </div>
+          </Card>
+
+          <Card>
+            <div className={`${previewAspectClass} overflow-hidden rounded-xl bg-pilot-soft`}>
               {finalUrl ? <video src={finalUrl} controls className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center p-6 text-center text-sm text-pilot-muted">No final story export yet</div>}
             </div>
             <div className="mt-4 flex items-center justify-between">
@@ -56,54 +74,24 @@ export default async function KidsStoryDetailPage({ params }: Props) {
           </Card>
 
           <Card>
-            <h2 className="text-lg font-black">YouTube Package</h2>
-            <p className="mt-1 text-sm text-pilot-muted">Description, tags, and thumbnail for the final upload.</p>
-	            <div className={`mt-4 ${thumbnailAspectClass} overflow-hidden rounded-xl bg-pilot-soft`}>
-              {thumbnailUrl ? <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center p-6 text-center text-sm text-pilot-muted">No thumbnail yet</div>}
-            </div>
+            <h2 className="text-lg font-black">Manual Upload Details</h2>
+            <p className="mt-1 text-sm text-pilot-muted">Use these details when you manually upload the finished video.</p>
             <div className="mt-4">
-              <KidsStoryActions id={project.id} finalVideoPath={project.finalVideoPath} />
-            </div>
-            <div className="mt-4">
-              <KidsStoryYouTubePublisher
-                id={project.id}
-                finalVideoPath={project.finalVideoPath}
-                youtubeDescription={project.youtubeDescription}
-                youtubeTags={project.youtubeTags}
-                thumbnailPath={project.thumbnailPath}
-                youtubeVideoUrl={project.youtubeVideoUrl}
-                youtubeUploadStatus={project.youtubeUploadStatus}
-              />
+              <KidsStoryUploadDetailsButton id={project.id} />
             </div>
             <div className="mt-4 space-y-4">
               <div>
+                <div className="text-sm font-bold text-pilot-ink">Video title</div>
+                <div className="mt-2 rounded-xl border border-pilot-line bg-white p-3 text-sm leading-6 text-pilot-muted">{project.title}</div>
+              </div>
+              <div>
                 <div className="text-sm font-bold text-pilot-ink">Description</div>
-                <div className="mt-2 min-h-28 whitespace-pre-wrap rounded-xl border border-pilot-line bg-white p-3 text-sm leading-6 text-pilot-muted">{project.youtubeDescription || "Create the YouTube package after the story is generated."}</div>
+                <div className="mt-2 min-h-28 whitespace-pre-wrap rounded-xl border border-pilot-line bg-white p-3 text-sm leading-6 text-pilot-muted">{project.youtubeDescription || "Create upload details after the story is generated."}</div>
               </div>
               <div>
                 <div className="text-sm font-bold text-pilot-ink">Tags</div>
                 <div className="mt-2 rounded-xl border border-pilot-line bg-white p-3 text-sm leading-6 text-pilot-muted">{project.youtubeTags || "No tags yet"}</div>
               </div>
-            </div>
-          </Card>
-
-          <Card>
-            <h2 className="text-lg font-black">Intro / Outro Videos</h2>
-	            <p className="mt-1 text-sm text-pilot-muted">Upload optional bumper videos before rendering the final story.</p>
-	            <div className="mt-4 grid gap-3 md:grid-cols-2">
-	              {project.introVideoPath ? (
-	                <video src={toPublicFileUrl(project.introVideoPath) || ""} controls className={`${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} w-full rounded-xl bg-pilot-soft object-cover`} />
-	              ) : (
-	                <div className={`grid ${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} place-items-center rounded-xl bg-pilot-soft text-sm text-pilot-muted`}>No intro</div>
-	              )}
-	              {project.outroVideoPath ? (
-	                <video src={toPublicFileUrl(project.outroVideoPath) || ""} controls className={`${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} w-full rounded-xl bg-pilot-soft object-cover`} />
-	              ) : (
-	                <div className={`grid ${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} place-items-center rounded-xl bg-pilot-soft text-sm text-pilot-muted`}>No outro</div>
-	              )}
-            </div>
-            <div className="mt-4">
-              <KidsStoryBumperForm id={project.id} introVideoPath={project.introVideoPath} outroVideoPath={project.outroVideoPath} />
             </div>
           </Card>
 

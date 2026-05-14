@@ -10,9 +10,9 @@ export async function POST(_request: Request, { params }: Props) {
     const project = await generateKidsYoutubePackage(id);
     return NextResponse.json({
       id: project.id,
+      title: project.title,
       youtubeDescription: project.youtubeDescription,
-      youtubeTags: project.youtubeTags,
-      thumbnailPath: project.thumbnailPath
+      youtubeTags: project.youtubeTags
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
