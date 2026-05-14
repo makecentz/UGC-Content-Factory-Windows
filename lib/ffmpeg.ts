@@ -141,15 +141,13 @@ export function createKenBurnsBackground(backgroundPath: string | null | undefin
 
 export function burnCaptions(captionsPath?: string | null) {
   if (!captionsPath || !existsSync(captionsPath)) return "";
-  const escaped = captionsPath
-    .replace(/\\/g, "\\\\")
+  const escaped = path
+    .resolve(captionsPath)
+    .replace(/\\/g, "/")
     .replace(/:/g, "\\:")
-    .replace(/'/g, "\\'")
-    .replace(/,/g, "\\,")
-    .replace(/\[/g, "\\[")
-    .replace(/\]/g, "\\]")
-    .replace(/ /g, "\\ ");
-  return `,ass=filename=${escaped}`;
+    .replace(/'/g, "\\'");
+
+  return `,ass=filename='${escaped}'`;
 }
 
 function assTimestampToSeconds(value: string) {
@@ -377,7 +375,7 @@ export async function renderVerticalVideo(options: RenderOptions) {
       durationSeconds: options.durationSeconds,
       aspectRatio: options.aspectRatio
     });
-    throw new Error(`FFmpeg visual render failed. ${mediaToolMissingMessage("ffmpeg")}\n\n${message}`);
+    throw new Error(`FFmpeg visual render failed even though FFmpeg is installed. ${message}`);
   }
 
   return options.outputPath;
