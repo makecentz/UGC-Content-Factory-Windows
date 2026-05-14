@@ -58,7 +58,7 @@ export function Sidebar() {
 
       <div className="mt-auto rounded-2xl border border-pilot-line bg-pilot-soft p-4">
         <div className="text-sm font-bold">Local Mode</div>
-        <div className="mt-1 text-xs leading-5 text-pilot-muted">Private MacBook workspace. Exports stay on this machine.</div>
+        <div className="mt-1 text-xs leading-5 text-pilot-muted">Private Windows workspace. Exports stay on this machine.</div>
       </div>
     </aside>
   );

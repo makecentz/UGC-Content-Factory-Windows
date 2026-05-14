@@ -12,7 +12,8 @@ export async function POST(_request: Request, { params }: Props) {
       id: project.id,
       title: project.title,
       youtubeDescription: project.youtubeDescription,
-      youtubeTags: project.youtubeTags
+      youtubeTags: project.youtubeTags,
+      thumbnailPath: project.thumbnailPath
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

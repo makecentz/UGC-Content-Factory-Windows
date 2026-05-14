@@ -149,18 +149,16 @@ export async function renderKidsStoryFinal(projectId: string) {
   const introPath = project.introVideoPath && existsSync(project.introVideoPath) ? project.introVideoPath : null;
   const outroPath = project.outroVideoPath && existsSync(project.outroVideoPath) ? project.outroVideoPath : null;
   const renderStamp = Date.now();
-  const titleCardOutputPath = aspectRatio === "16:9" ? storagePath("temp", `kids-title-card-${project.id}-${renderStamp}.mp4`) : null;
+  const titleCardOutputPath = storagePath("temp", `kids-title-card-${project.id}-${renderStamp}.mp4`);
   let titleCardPath: string | null = null;
 
-  if (titleCardOutputPath) {
-    try {
-      titleCardPath = await renderTitleCardClip(project.title, titleCardOutputPath, aspectRatio);
-    } catch (error) {
-      await logError("Kids title card render skipped", error, { projectId: project.id, titleCardOutputPath });
-    }
+  try {
+    titleCardPath = await renderTitleCardClip(project.title, titleCardOutputPath, aspectRatio);
+  } catch (error) {
+    await logError("Kids title card render skipped", error, { projectId: project.id, titleCardOutputPath });
   }
 
-  await concatVideoFiles([titleCardPath, introPath, ...usable.map((scene) => scene.clipPath as string), outroPath].filter((clip): clip is string => Boolean(clip)), outputPath, aspectRatio);
+  await concatVideoFiles([introPath, titleCardPath, ...usable.map((scene) => scene.clipPath as string), outroPath].filter((clip): clip is string => Boolean(clip)), outputPath, aspectRatio);
 
   const renderedProject = await prisma.kidsStoryProject.update({ where: { id: project.id }, data: { status: "rendered", finalVideoPath: outputPath, errorMessage: null } });
   await logInfo("Kids final render completed", { projectId: project.id, outputPath, sceneCount: usable.length, hasIntro: Boolean(introPath), hasOutro: Boolean(outroPath) });

@@ -440,52 +440,50 @@ function wrapTitleText(text: string) {
   return lines.slice(0, 3);
 }
 
+function escapeDrawtext(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/:/g, "\\:").replace(/'/g, "\\'").replace(/,/g, "\\,");
+}
+
+function escapeDrawtextPath(value: string) {
+  return value.replace(/\\/g, "/").replace(/:/g, "\\:");
+}
+
 export async function renderTitleCardClip(title: string, outputPath: string, aspectRatio: "9:16" | "16:9" = "16:9", durationSeconds = 3.5) {
   const { width, height } = dimensionsForAspect(aspectRatio);
-  const tempDir = path.join(os.tmpdir(), `reelpilot-title-card-${Date.now()}`);
-  mkdirSync(tempDir, { recursive: true });
   ensureOutputDir(outputPath);
-  const titleImagePath = path.join(tempDir, "title-card.png");
+  if (!(await ffmpegHasFilter("drawtext"))) {
+    throw new Error("This FFmpeg build does not include the drawtext filter needed for title pages.");
+  }
   const titleLines = wrapTitleText(title.trim() || "Kids Story");
   const fontSize = aspectRatio === "16:9" ? 94 : 76;
   const lineHeight = Math.round(fontSize * 1.18);
   const firstY = Math.round(height / 2 - ((titleLines.length - 1) * lineHeight) / 2);
-  const tspans = titleLines
-    .map((line, index) => `<tspan x="${width / 2}" y="${firstY + index * lineHeight}">${escapeXml(line)}</tspan>`)
-    .join("");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1f6f78"/>
-      <stop offset="0.54" stop-color="#7c3aed"/>
-      <stop offset="1" stop-color="#f97316"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="45%" r="55%">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="${width}" height="${height}" fill="url(#bg)"/>
-  <rect width="${width}" height="${height}" fill="url(#glow)"/>
-  <text font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#fff" paint-order="stroke" stroke="#1f2937" stroke-width="12" stroke-linejoin="round">${tspans}</text>
-</svg>`;
-  await sharp(Buffer.from(svg)).png().toFile(titleImagePath);
-
+  const fontPath = ["C:\\Windows\\Fonts\\arialbd.ttf", "C:\\Windows\\Fonts\\arial.ttf"].find((candidate) => existsSync(candidate));
+  const fontOption = fontPath ? `fontfile='${escapeDrawtextPath(fontPath)}':` : "";
   const fadeStart = Math.max(0.5, durationSeconds - 0.75).toFixed(2);
+  const textFilters = titleLines.map((line, index) => {
+    const y = firstY + index * lineHeight - Math.round(fontSize / 2);
+    return `drawtext=${fontOption}text='${escapeDrawtext(line)}':fontcolor=white:fontsize=${fontSize}:borderw=7:bordercolor=0x111827:x=(w-text_w)/2:y=${y}`;
+  });
+  const videoFilter = [
+    "fps=30",
+    "drawbox=x=0:y=0:w=iw:h=ih:color=0x111827@0.16:t=fill",
+    ...textFilters,
+    `fade=t=out:st=${fadeStart}:d=0.75`,
+    "format=yuv420p"
+  ].join(",");
   const args = [
     "-y",
-    "-loop",
-    "1",
-    "-t",
-    String(durationSeconds),
+    "-f",
+    "lavfi",
     "-i",
-    titleImagePath,
+    `color=c=0x7c3aed:s=${width}x${height}:d=${durationSeconds}`,
     "-f",
     "lavfi",
     "-i",
     "anullsrc=channel_layout=stereo:sample_rate=44100",
     "-vf",
-    `scale=${width}:${height},fps=30,fade=t=out:st=${fadeStart}:d=0.75,format=yuv420p`,
+    videoFilter,
     "-map",
     "0:v:0",
     "-map",

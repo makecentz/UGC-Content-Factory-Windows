@@ -26,9 +26,11 @@ export default async function KidsStoryDetailPage({ params }: Props) {
   if (!project) notFound();
 
   const finalUrl = toPublicFileUrl(project.finalVideoPath);
+  const thumbnailUrl = toPublicFileUrl(project.thumbnailPath);
   const aspectRatio = project.aspectRatio === "9:16" ? "9:16" : "16:9";
   const previewAspectClass = aspectRatio === "9:16" ? "aspect-[9/16] max-h-[720px] w-full max-w-sm mx-auto" : "aspect-video";
   const scenePreviewClass = aspectRatio === "9:16" ? "aspect-[9/16] w-40" : "aspect-video w-72";
+  const thumbnailAspectClass = aspectRatio === "9:16" ? "aspect-[9/16] max-h-[520px] w-full max-w-xs" : "aspect-video";
 
   return (
     <>
@@ -83,6 +85,12 @@ export default async function KidsStoryDetailPage({ params }: Props) {
               <div>
                 <div className="text-sm font-bold text-pilot-ink">Video title</div>
                 <div className="mt-2 rounded-xl border border-pilot-line bg-white p-3 text-sm leading-6 text-pilot-muted">{project.title}</div>
+              </div>
+              <div>
+                <div className="text-sm font-bold text-pilot-ink">Thumbnail</div>
+                <div className={`mt-2 ${thumbnailAspectClass} overflow-hidden rounded-xl bg-pilot-soft`}>
+                  {thumbnailUrl ? <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full min-h-40 place-items-center p-6 text-center text-sm text-pilot-muted">Create upload details to generate a thumbnail.</div>}
+                </div>
               </div>
               <div>
                 <div className="text-sm font-bold text-pilot-ink">Description</div>

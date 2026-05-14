@@ -50,7 +50,7 @@ export default async function SettingsPage() {
         </Card>
         <Card>
           <h2 className="text-lg font-black">Local ComfyUI + Wan Rendering</h2>
-          <p className="mt-2 text-sm leading-6 text-pilot-muted">Local Wan rendering can avoid Veo credits, but speed and quality depend on your MacBook hardware. Many AI video workflows are optimized for NVIDIA CUDA GPUs, so Apple Silicon may be slower or require smaller settings.</p>
+          <p className="mt-2 text-sm leading-6 text-pilot-muted">Local Wan rendering can avoid Veo credits, but speed and quality depend on your Windows hardware. Many AI video workflows are optimized for NVIDIA CUDA GPUs, so systems without a compatible GPU may be slower or require smaller settings.</p>
           <div className="mt-4">
             <ComfySettings settings={settings} />
           </div>

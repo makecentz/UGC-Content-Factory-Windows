@@ -6,11 +6,9 @@
   "scripts": {
     "dev": "npm run prepare:media-tools && node scripts/ensure-comfyui.mjs && next dev",
     "electron:dev": "electron .",
-    "electron:prepare-mac-tools": "node scripts/prepare-mac-tools.mjs",
     "electron:prepare-win-tools": "node scripts/prepare-win-tools.mjs",
     "prepare:media-tools": "node scripts/ensure-media-tools.mjs",
     "build": "next build",
-    "dist:mac": "npm run build && npm run electron:prepare-mac-tools && electron-builder --mac dmg pkg zip --arm64 --publish never",
     "dist:win": "npm run build && npm run electron:prepare-win-tools && set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --win nsis --x64 --publish never",
     "start": "next start",
     "lint": "next lint",

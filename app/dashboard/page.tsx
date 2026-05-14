@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clapperboard, Download, Plus, Sparkles, TriangleAlert } from "lucide-react";
+import { Clapperboard, Plus, Sparkles, TriangleAlert } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { GenerateButton } from "@/components/action-buttons";
 import { PageHeader } from "@/components/page-header";
@@ -55,21 +55,6 @@ export default async function DashboardPage() {
           </Card>
         ))}
       </div>
-
-      <Card className="mt-8">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <img src="/reelpilot-logo.png" alt="UGC Content Factory logo" className="h-16 w-16 rounded-2xl border border-pilot-line object-cover" />
-            <div>
-              <h2 className="text-lg font-black">MacBook Installer</h2>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-pilot-muted">Download the packaged Windows installer with bundled FFmpeg, FFprobe, yt-dlp, and local database setup.</p>
-            </div>
-          </div>
-          <a href="/api/downloads/mac-installer" className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-pilot-purple px-4 text-sm font-semibold text-white">
-            <Download size={17} /> Download Mac Installer
-          </a>
-        </div>
-      </Card>
 
       <Card className="mt-8">
         <div className="mb-4 flex items-center justify-between">

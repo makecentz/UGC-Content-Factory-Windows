@@ -1,5 +1,7 @@
+import { writeFile } from "node:fs/promises";
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
+import { safeFileName, storagePath } from "@/lib/storage";
 
 type KidsPackage = {
   title: string;
@@ -24,6 +26,67 @@ function parseTags(value: unknown) {
       .slice(0, 18);
   }
   return [];
+}
+
+function imageModel() {
+  return process.env.OPENAI_IMAGE_MODEL || "gpt-image-1.5";
+}
+
+async function downloadImage(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`OpenAI image download failed: ${response.status} ${await response.text()}`);
+  return Buffer.from(await response.arrayBuffer());
+}
+
+function kidsAspectRatio(value?: string | null) {
+  return value === "9:16" ? "9:16" : "16:9";
+}
+
+function thumbnailPrompt(input: { title: string; ageRange: string; artStyle: string; aspectRatio?: string | null; storyTheme?: string | null }) {
+  const ratio = kidsAspectRatio(input.aspectRatio);
+  const composition = ratio === "9:16" ? "vertical 9:16 Shorts thumbnail" : "landscape 16:9 video thumbnail";
+  return `Create a bright, colorful ${composition} for a child-safe story video.
+
+Story title: "${input.title}"
+Audience: ages ${input.ageRange}
+Theme: ${input.storyTheme || "gentle adventure"}
+Visual style: ${input.artStyle}
+
+Requirements:
+- cheerful, polished, parent-friendly kids story thumbnail
+- clear main character moment with expressive happy emotion
+- magical storybook background, colorful but not scary
+- include short readable title text using the story title
+- no logos, no watermarks, no unrelated brand names
+- no extra text besides the title`;
+}
+
+async function generateThumbnail(input: {
+  id: string;
+  title: string;
+  ageRange: string;
+  artStyle: string;
+  aspectRatio?: string | null;
+  storyTheme?: string | null;
+}) {
+  const openai = client();
+  const aspectRatio = kidsAspectRatio(input.aspectRatio);
+  const size = aspectRatio === "9:16" ? "1024x1536" : "1536x1024";
+  const response = await openai.images.generate({
+    model: imageModel(),
+    prompt: thumbnailPrompt(input),
+    size,
+    quality: process.env.OPENAI_IMAGE_QUALITY || "medium",
+    n: 1
+  } as any);
+
+  const image = response.data?.[0];
+  const bytes = image?.b64_json ? Buffer.from(image.b64_json, "base64") : image?.url ? await downloadImage(image.url) : null;
+  if (!bytes) throw new Error("OpenAI did not return image data for the thumbnail.");
+
+  const thumbnailPath = storagePath("kids/thumbnails", `${safeFileName(input.title)}-${input.id.slice(0, 8)}-${aspectRatio.replace(":", "x")}-thumbnail.png`);
+  await writeFile(thumbnailPath, bytes);
+  return thumbnailPath;
 }
 
 async function generateMetadata(input: {
@@ -90,6 +153,14 @@ export async function generateKidsYoutubePackage(projectId: string) {
     ageRange: project.ageRange,
     storyTheme: project.storyTheme
   });
+  const thumbnailPath = await generateThumbnail({
+    id: project.id,
+    title: metadata.title,
+    ageRange: project.ageRange,
+    artStyle: project.artStyle,
+    aspectRatio: project.aspectRatio,
+    storyTheme: project.storyTheme
+  });
 
   return prisma.kidsStoryProject.update({
     where: { id: project.id },
@@ -97,6 +168,7 @@ export async function generateKidsYoutubePackage(projectId: string) {
       title: metadata.title,
       youtubeDescription: metadata.description,
       youtubeTags: metadata.tags.join(", "),
+      thumbnailPath,
       errorMessage: null
     }
   });
