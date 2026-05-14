@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/page-header";
-import { ApiKeySettings, ComfySettings, DebugLogActions, SettingsAction, WatermarkSettings } from "@/components/action-buttons";
+import { ApiKeySettings, ComfySettings, DebugLogActions, LocalVideoEngineSetup, SettingsAction, WatermarkSettings } from "@/components/action-buttons";
 import { Card } from "@/components/ui";
 import { apiKeyStatus } from "@/lib/local-config";
 import { prisma } from "@/lib/prisma";
@@ -51,6 +51,9 @@ export default async function SettingsPage() {
         <Card>
           <h2 className="text-lg font-black">Local ComfyUI + Wan Rendering</h2>
           <p className="mt-2 text-sm leading-6 text-pilot-muted">Local Wan rendering can avoid Veo credits, but speed and quality depend on your Windows hardware. Many AI video workflows are optimized for NVIDIA CUDA GPUs, so systems without a compatible GPU may be slower or require smaller settings.</p>
+          <div className="mt-4">
+            <LocalVideoEngineSetup />
+          </div>
           <div className="mt-4">
             <ComfySettings settings={settings} />
           </div>

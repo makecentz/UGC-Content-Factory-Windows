@@ -13,6 +13,7 @@ import { mockProvider } from "@/lib/providers/mock-provider";
 import { testComfyConnection } from "@/lib/providers/comfyui/comfyui-client";
 import { getVideoProvider } from "@/lib/providers";
 import { autoStartComfyIfEnabled, isComfyRunning, openComfyUI, restartComfyUI, startComfyUI, stopComfyUI } from "@/lib/local-process/comfyui-launcher";
+import { checkWanSetup, installWan22FiveB, prepareWanFolders } from "@/lib/local-process/wan-setup";
 import { loadWorkflowTemplate } from "@/lib/providers/comfyui/workflow-loader";
 import { validateComfyWorkflowForLocalRender } from "@/lib/providers/comfyui/workflow-validator";
 
@@ -242,6 +243,15 @@ export async function POST(request: Request) {
   if (body.action === "comfy-restart") return NextResponse.json(await restartComfyUI());
   if (body.action === "comfy-open") return NextResponse.json(await openComfyUI());
   if (body.action === "comfy-autostart") return NextResponse.json(await autoStartComfyIfEnabled());
+  if (body.action === "wan-setup-check") return NextResponse.json(await checkWanSetup());
+  if (body.action === "wan-setup-prepare") return NextResponse.json(await prepareWanFolders());
+  if (body.action === "wan-setup-install") {
+    try {
+      return NextResponse.json(await installWan22FiveB(String(body.huggingFaceToken || "").trim() || undefined));
+    } catch (error) {
+      return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    }
+  }
   if (body.action === "local-wan") {
     try {
       const settings = await prisma.settings.findFirst();

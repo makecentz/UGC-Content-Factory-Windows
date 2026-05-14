@@ -553,6 +553,97 @@ export function ComfySettings({
   );
 }
 
+type WanSetupFile = {
+  label: string;
+  fileName: string;
+  folder: string;
+  targetPath: string;
+  installed: boolean;
+};
+
+export function LocalVideoEngineSetup() {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<{
+    comfyFolder?: string;
+    freeDisk?: string;
+    gpu?: string;
+    workflowPath?: string;
+    workflowInstalled?: boolean;
+    files?: WanSetupFile[];
+  } | null>(null);
+  const [token, setToken] = useState("");
+  const router = useRouter();
+
+  async function post(action: string) {
+    setBusy(action);
+    setMessage(action === "wan-setup-install" ? "Downloading Wan 2.2 files. This can take a long time..." : "Checking local video engine...");
+    const response = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, huggingFaceToken: token })
+    });
+    const result = await readJsonResponse(response);
+    setBusy(null);
+    setMessage(result.message || result.error || "Done.");
+    if (result.files || result.comfyFolder) setStatus(result);
+    router.refresh();
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-pilot-line bg-white p-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h3 className="text-base font-black text-pilot-ink">Local Video Engine Setup</h3>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-pilot-muted">
+              Installs the official Wan 2.2 5B Comfy model pack into your local ComfyUI folder. The download is large, so keep the app open until it finishes.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" disabled={Boolean(busy)} onClick={() => post("wan-setup-check")}>Check Setup</Button>
+            <Button type="button" variant="secondary" disabled={Boolean(busy)} onClick={() => post("wan-setup-prepare")}>Prepare Folders</Button>
+            <Button type="button" disabled={Boolean(busy)} onClick={() => post("wan-setup-install")}>
+              {busy === "wan-setup-install" ? "Installing..." : "Install Wan 2.2 5B"}
+            </Button>
+          </div>
+        </div>
+        <label className="mt-4 block text-sm font-semibold">
+          Hugging Face token, optional
+          <input
+            value={token}
+            onChange={(event) => setToken(event.target.value)}
+            type="password"
+            placeholder="Only needed if Hugging Face asks for access"
+            className="mt-2 h-10 w-full rounded-xl border border-pilot-line px-3 text-sm"
+          />
+        </label>
+        {message ? <p className="mt-3 text-sm leading-6 text-pilot-muted">{message}</p> : null}
+        {status ? (
+          <div className="mt-4 grid gap-3 text-sm text-pilot-muted">
+            <div><span className="font-bold text-pilot-ink">ComfyUI folder:</span> {status.comfyFolder || "Not set"}</div>
+            <div><span className="font-bold text-pilot-ink">Free disk:</span> {status.freeDisk || "Unknown"}</div>
+            <div><span className="font-bold text-pilot-ink">GPU:</span> {status.gpu || "Unknown"}</div>
+            <div><span className="font-bold text-pilot-ink">Official workflow:</span> {status.workflowInstalled ? "Downloaded" : status.workflowPath || "Not downloaded yet"}</div>
+            {status.files?.length ? (
+              <div className="rounded-xl border border-pilot-line bg-pilot-soft p-3">
+                <div className="font-bold text-pilot-ink">Wan files</div>
+                <div className="mt-2 space-y-1">
+                  {status.files.map((file) => (
+                    <div key={`${file.folder}-${file.fileName}`} className={file.installed ? "text-emerald-700" : "text-pilot-muted"}>
+                      {file.installed ? "Installed" : "Missing"} - {file.fileName}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function UGCProjectActions({ id, finalVideoPath }: { id: string; finalVideoPath?: string | null }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState("");
