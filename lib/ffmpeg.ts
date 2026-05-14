@@ -2,7 +2,6 @@ import { execFile, spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import sharp from "sharp";
 import { logError } from "./logger";
 import { mediaToolMissingMessage, resolveMediaToolPath } from "./media-tools";
 
@@ -212,7 +211,9 @@ function escapeXml(value: string) {
 }
 
 async function createCaptionOverlays(captionsPath?: string | null): Promise<CaptionOverlay[]> {
+  if (process.env.REELPILOT_DISABLE_SHARP_CAPTION_OVERLAYS !== "false") return [];
   if (!captionsPath || !existsSync(captionsPath)) return [];
+  const sharp = await import("sharp").then((mod) => mod.default);
   const tempDir = path.join(os.tmpdir(), "reelpilot-captions");
   mkdirSync(tempDir, { recursive: true });
   const baseName = path.basename(captionsPath, path.extname(captionsPath)).replace(/[^a-z0-9-]/gi, "") || "caption";

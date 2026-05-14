@@ -99,6 +99,10 @@ function safeReadJson(filePath: string) {
   }
 }
 
+function isUiWorkflow(workflow: unknown) {
+  return Boolean(workflow && typeof workflow === "object" && !Array.isArray(workflow) && Array.isArray((workflow as any).nodes));
+}
+
 function walkJsonFiles(root: string, maxFiles = 200) {
   const files: string[] = [];
   const seen = new Set<string>();
@@ -152,7 +156,7 @@ async function discoverLocalWorkflow(wanVersion: WanVersion, workflowType: Workf
       });
     for (const candidate of candidates) {
       const workflow = safeReadJson(candidate);
-      if (!workflow) continue;
+      if (!workflow || isUiWorkflow(workflow)) continue;
       const validation = validateComfyWorkflowForLocalRender(workflow);
       if (validation.ok) return candidate;
     }
@@ -186,40 +190,47 @@ export async function loadWorkflowTemplate({
 }) {
   const customWorkflowPath = customPath?.trim();
   const hasCustomPath = Boolean(customWorkflowPath) && (workflowType === "custom-workflow" || requireLocalWorkflow);
-  const discoveredLocalPath = !hasCustomPath && requireLocalWorkflow ? await discoverLocalWorkflow(wanVersion, workflowType) : "";
-  const filePath =
-    hasCustomPath
-      ? path.resolve(customWorkflowPath as string)
-      : discoveredLocalPath
-        ? discoveredLocalPath
-      : findWorkflowFile(wanVersion, workflowType, requireLocalWorkflow);
-  if (!existsSync(filePath)) {
+  const discoveredLocalPath = requireLocalWorkflow ? await discoverLocalWorkflow(wanVersion, workflowType) : "";
+  const candidatePaths = [
+    hasCustomPath ? path.resolve(customWorkflowPath as string) : "",
+    discoveredLocalPath,
+    findWorkflowFile(wanVersion, workflowType, requireLocalWorkflow)
+  ].filter(Boolean);
+  if (!candidatePaths.some((candidate) => existsSync(candidate))) {
     const localHint = requireLocalWorkflow
       ? " Export a true local Wan API workflow from ComfyUI, then select it in Settings > Local workflow JSON path."
       : "";
     throw new Error(`Workflow JSON missing. ReelPilot checked: ${workflowRootCandidates().join(", ")}.${localHint}`);
   }
-  if (requireLocalWorkflow && !hasCustomPath && !isExplicitLocalWorkflowFile(filePath)) {
-    throw new Error(
-      "Comfy Local needs a true local Wan workflow JSON. ReelPilot will not default to the bundled Wan API examples. Export a local Wan 2.1 or Wan 2.2 API workflow from ComfyUI, then select that file in Settings > Local workflow JSON path."
-    );
-  }
-  const workflow = JSON.parse(readFileSync(filePath, "utf8"));
-  stripWorkflowMetadata(workflow);
-  validateWorkflow(workflow);
-  if (!skipLocalValidation) {
-    const localValidation = validateComfyWorkflowForLocalRender(workflow);
-    if (!localValidation.ok) {
-      if (requireLocalWorkflow && !hasCustomPath) {
-        throw new Error(
-          "Comfy Local needs a true local Wan workflow JSON. The bundled Wan API example is for cloud/API rendering and was not used. Open ComfyUI, load a local Wan 2.1 or Wan 2.2 workflow that uses local model files, export it in API format, then select that file in Settings > Local workflow JSON path."
-        );
+
+  const errors: string[] = [];
+  for (const filePath of candidatePaths) {
+    if (!existsSync(filePath)) continue;
+    if (requireLocalWorkflow && !hasCustomPath && !isExplicitLocalWorkflowFile(filePath)) continue;
+
+    try {
+      const workflow = JSON.parse(readFileSync(filePath, "utf8"));
+      if (isUiWorkflow(workflow)) {
+        errors.push(`${filePath}: UI workflow JSON must be exported in API format before direct submission.`);
+        continue;
       }
-      const details = localValidation.forbiddenNodes.map((node) => `Node ${node.nodeId}: ${node.classType}. ${node.reason}`).join(" ");
-      throw new Error(`${localValidation.message}${details ? ` ${details}` : ""}`);
+      stripWorkflowMetadata(workflow);
+      validateWorkflow(workflow);
+      if (!skipLocalValidation) {
+        const localValidation = validateComfyWorkflowForLocalRender(workflow);
+        if (!localValidation.ok) {
+          const details = localValidation.forbiddenNodes.map((node) => `Node ${node.nodeId}: ${node.classType}. ${node.reason}`).join(" ");
+          errors.push(`${filePath}: ${localValidation.message}${details ? ` ${details}` : ""}`);
+          continue;
+        }
+      }
+      return { workflow, filePath };
+    } catch (error) {
+      errors.push(`${filePath}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
-  return { workflow, filePath };
+
+  throw new Error(`No runnable local Comfy workflow was found. ${errors.join(" ")}`);
 }
 
 function stripWorkflowMetadata(workflow: unknown) {
