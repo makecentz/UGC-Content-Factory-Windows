@@ -15,15 +15,22 @@ function kidsAspectRatio(value?: string | null): KidsAspectRatio {
   return value === "9:16" ? "9:16" : "16:9";
 }
 
-function buildScenePrompt(scene: { prompt: string; visualDescription?: string | null; camera?: string | null; mood?: string | null }, artStyle: string, aspectRatio?: string | null) {
-  const ratio = kidsAspectRatio(aspectRatio);
+function buildScenePrompt(
+  scene: { prompt: string; visualDescription?: string | null; camera?: string | null; mood?: string | null },
+  project: { title: string; prompt?: string | null; script?: string | null; storyTheme?: string | null; artStyle: string; aspectRatio?: string | null }
+) {
+  const ratio = kidsAspectRatio(project.aspectRatio);
   const composition = ratio === "9:16" ? "Vertical 9:16 YouTube Shorts kids story animation." : "Landscape 16:9 YouTube kids story animation.";
   return [
+    `Story title: ${project.title}.`,
+    project.prompt ? `Original story brief: ${project.prompt}.` : "",
+    project.storyTheme ? `Story theme: ${project.storyTheme}.` : "",
     scene.prompt,
     scene.visualDescription,
-    `Style: ${artStyle}.`,
+    `Style: ${project.artStyle}.`,
     scene.camera ? `Camera: ${scene.camera}.` : "",
     scene.mood ? `Mood: ${scene.mood}.` : "",
+    "Character consistency lock: preserve the exact main character species, age, body type, colors, outfit, accessories, and role stated in the story brief, title, script, narration, and scene description. If the main character is an animal, toy, object, plant, or fantasy creature, keep that exact non-human character and never replace it with a human person.",
     `${composition} No visible text, no captions, no subtitles, no logos, no words on screen. Gentle child-safe imagery.`
   ]
     .filter(Boolean)
@@ -69,7 +76,7 @@ export async function renderKidsStoryScene(sceneId: string) {
   if (!scene) throw new Error("Kids story scene not found.");
   const project = scene.kidsStoryProject;
   const aspectRatio = kidsAspectRatio(project.aspectRatio);
-  const prompt = scene.editedPrompt || buildScenePrompt(scene, project.artStyle, aspectRatio);
+  const prompt = scene.editedPrompt || buildScenePrompt(scene, project);
 
   await prisma.kidsStoryScene.update({ where: { id: scene.id }, data: { status: scene.clipPath ? "regenerating" : "generating", approved: false, errorMessage: null } });
   try {
@@ -92,7 +99,9 @@ export async function renderKidsStoryScene(sceneId: string) {
               title: project.title,
               artStyle: project.artStyle,
               ageRange: project.ageRange,
-              aspectRatio
+              aspectRatio,
+              storyBrief: project.prompt,
+              storyTheme: project.storyTheme
             }
           );
     const clipPath = await renderKidsImageClip(
@@ -110,7 +119,9 @@ export async function renderKidsStoryScene(sceneId: string) {
         title: project.title,
         artStyle: project.artStyle,
         ageRange: project.ageRange,
-        aspectRatio
+        aspectRatio,
+        storyBrief: project.prompt,
+        storyTheme: project.storyTheme
       },
       imagePath
     );
@@ -146,8 +157,19 @@ export async function renderKidsStoryFinal(projectId: string) {
   if (!usable.length) throw new Error("No ready kids story scenes are available to render.");
   const outputPath = project.finalVideoPath || storagePath("kids/exports", `${safeFileName(project.title)}-${project.id.slice(0, 8)}.mp4`);
 
-  const introPath = project.introVideoPath && existsSync(project.introVideoPath) ? project.introVideoPath : null;
-  const outroPath = project.outroVideoPath && existsSync(project.outroVideoPath) ? project.outroVideoPath : null;
+  const settings = await prisma.settings.findFirst();
+  const introPath =
+    project.introVideoPath && existsSync(project.introVideoPath)
+      ? project.introVideoPath
+      : settings?.defaultIntroVideoPath && existsSync(settings.defaultIntroVideoPath)
+        ? settings.defaultIntroVideoPath
+        : null;
+  const outroPath =
+    project.outroVideoPath && existsSync(project.outroVideoPath)
+      ? project.outroVideoPath
+      : settings?.defaultOutroVideoPath && existsSync(settings.defaultOutroVideoPath)
+        ? settings.defaultOutroVideoPath
+        : null;
   const renderStamp = Date.now();
   const titleCardOutputPath = storagePath("temp", `kids-title-card-${project.id}-${renderStamp}.mp4`);
   let titleCardPath: string | null = null;
@@ -196,7 +218,7 @@ export async function generateKidsStory(projectId: string) {
             kidsStoryProjectId: project.id,
             sceneNumber: scene.sceneNumber,
             narration: scene.narration,
-            prompt: buildScenePrompt(scene, project.artStyle, project.aspectRatio),
+            prompt: buildScenePrompt(scene, project),
             visualDescription: scene.visualDescription,
             camera: scene.camera,
             mood: scene.mood,

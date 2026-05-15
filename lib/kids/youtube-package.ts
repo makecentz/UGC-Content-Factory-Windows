@@ -42,7 +42,7 @@ function kidsAspectRatio(value?: string | null) {
   return value === "9:16" ? "9:16" : "16:9";
 }
 
-function thumbnailPrompt(input: { title: string; ageRange: string; artStyle: string; aspectRatio?: string | null; storyTheme?: string | null }) {
+function thumbnailPrompt(input: { title: string; ageRange: string; artStyle: string; aspectRatio?: string | null; storyTheme?: string | null; script?: string | null }) {
   const ratio = kidsAspectRatio(input.aspectRatio);
   const composition = ratio === "9:16" ? "vertical 9:16 Shorts thumbnail" : "landscape 16:9 video thumbnail";
   return `Create a bright, colorful ${composition} for a child-safe story video.
@@ -51,10 +51,14 @@ Story title: "${input.title}"
 Audience: ages ${input.ageRange}
 Theme: ${input.storyTheme || "gentle adventure"}
 Visual style: ${input.artStyle}
+Story/script context:
+${(input.script || "").slice(0, 1600)}
 
 Requirements:
 - cheerful, polished, parent-friendly kids story thumbnail
 - clear main character moment with expressive happy emotion
+- preserve the exact main character species/type and appearance from the title and script
+- if the main character is a mouse, turtle, rabbit, animal, toy, object, plant, or fantasy creature, show that exact non-human character and do not replace it with a human
 - magical storybook background, colorful but not scary
 - include short readable title text using the story title
 - no logos, no watermarks, no unrelated brand names
@@ -68,6 +72,7 @@ async function generateThumbnail(input: {
   artStyle: string;
   aspectRatio?: string | null;
   storyTheme?: string | null;
+  script?: string | null;
 }) {
   const openai = client();
   const aspectRatio = kidsAspectRatio(input.aspectRatio);
@@ -159,7 +164,8 @@ export async function generateKidsYoutubePackage(projectId: string) {
     ageRange: project.ageRange,
     artStyle: project.artStyle,
     aspectRatio: project.aspectRatio,
-    storyTheme: project.storyTheme
+    storyTheme: project.storyTheme,
+    script: project.script
   });
 
   return prisma.kidsStoryProject.update({

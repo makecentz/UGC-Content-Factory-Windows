@@ -339,11 +339,15 @@ export function SceneActions({ id, prompt }: { id: string; prompt: string }) {
 export function WatermarkSettings({
   enabled,
   position,
-  opacity
+  opacity,
+  defaultIntroVideoPath,
+  defaultOutroVideoPath
 }: {
   enabled: boolean;
   position: string;
   opacity: number;
+  defaultIntroVideoPath?: string | null;
+  defaultOutroVideoPath?: string | null;
 }) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -358,31 +362,52 @@ export function WatermarkSettings({
         setMessage("Saving...");
         const formData = new FormData(event.currentTarget);
         const response = await fetch("/api/settings/watermark", { method: "POST", body: formData });
-        const data = await response.json();
+        const data = await readJsonResponse(response);
         setBusy(false);
-        setMessage(data.id ? "Watermark settings saved." : "Could not save watermark settings.");
+        setMessage(data.id ? "Branding and default video settings saved." : data.error || "Could not save settings.");
         router.refresh();
       }}
     >
-      <label className="flex items-center gap-2 text-sm font-semibold">
-        <input name="enabled" type="checkbox" value="true" defaultChecked={enabled} />
-        Enable watermark
-      </label>
-      <input name="file" type="file" accept="image/png" className="block w-full text-sm text-pilot-muted" />
-      <label className="block text-sm font-semibold">
-        Position
-        <select name="position" defaultValue={position} className="mt-2 h-10 w-full rounded-xl border border-pilot-line px-3 text-sm">
-          <option value="bottom-right">bottom-right</option>
-          <option value="bottom-center">bottom-center</option>
-          <option value="top-right">top-right</option>
-        </select>
-      </label>
-      <label className="block text-sm font-semibold">
-        Opacity
-        <input name="opacity" type="number" min="0" max="1" step="0.05" defaultValue={opacity} className="mt-2 h-10 w-full rounded-xl border border-pilot-line px-3 text-sm" />
-      </label>
+      <div className="rounded-2xl border border-pilot-line p-4">
+        <h3 className="font-black">Watermark</h3>
+        <label className="mt-3 flex items-center gap-2 text-sm font-semibold">
+          <input name="enabled" type="checkbox" value="true" defaultChecked={enabled} />
+          Enable watermark
+        </label>
+        <input name="file" type="file" accept="image/png" className="mt-3 block w-full text-sm text-pilot-muted" />
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <label className="block text-sm font-semibold">
+            Position
+            <select name="position" defaultValue={position} className="mt-2 h-10 w-full rounded-xl border border-pilot-line px-3 text-sm">
+              <option value="bottom-right">bottom-right</option>
+              <option value="bottom-center">bottom-center</option>
+              <option value="top-right">top-right</option>
+            </select>
+          </label>
+          <label className="block text-sm font-semibold">
+            Opacity
+            <input name="opacity" type="number" min="0" max="1" step="0.05" defaultValue={opacity} className="mt-2 h-10 w-full rounded-xl border border-pilot-line px-3 text-sm" />
+          </label>
+        </div>
+      </div>
+      <div className="rounded-2xl border border-pilot-line p-4">
+        <h3 className="font-black">Default Intro / Outro Videos</h3>
+        <p className="mt-1 text-sm leading-6 text-pilot-muted">These videos are added to the beginning and end of every kids story render unless left blank.</p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="rounded-xl border border-pilot-line p-4">
+            <span className="text-sm font-bold text-pilot-ink">Intro video</span>
+            <span className="mt-1 block text-xs text-pilot-muted">{defaultIntroVideoPath ? "Uploaded and used by default" : "Optional MP4, MOV, M4V, or WebM"}</span>
+            <input name="introVideo" type="file" accept="video/mp4,video/quicktime,video/x-m4v,video/webm" className="mt-3 block w-full text-sm text-pilot-muted" />
+          </label>
+          <label className="rounded-xl border border-pilot-line p-4">
+            <span className="text-sm font-bold text-pilot-ink">Outro video</span>
+            <span className="mt-1 block text-xs text-pilot-muted">{defaultOutroVideoPath ? "Uploaded and used by default" : "Optional MP4, MOV, M4V, or WebM"}</span>
+            <input name="outroVideo" type="file" accept="video/mp4,video/quicktime,video/x-m4v,video/webm" className="mt-3 block w-full text-sm text-pilot-muted" />
+          </label>
+        </div>
+      </div>
       <div className="flex items-center gap-3">
-        <Button disabled={busy}>{busy ? "Saving..." : "Save Watermark"}</Button>
+        <Button disabled={busy}>{busy ? "Saving..." : "Save Branding Settings"}</Button>
         {message ? <span className="text-sm text-pilot-muted">{message}</span> : null}
       </div>
     </form>

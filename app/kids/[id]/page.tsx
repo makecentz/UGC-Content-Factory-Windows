@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
-import { KidsStoryActions, KidsStoryBumperForm, KidsStoryUploadDetailsButton } from "@/components/kids-story-actions";
+import { KidsStoryActions, KidsStoryUploadDetailsButton } from "@/components/kids-story-actions";
 import { Badge, Card } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
 import { toPublicFileUrl } from "@/lib/storage";
@@ -43,26 +43,6 @@ export default async function KidsStoryDetailPage({ params }: Props) {
       <div className="grid gap-6 xl:grid-cols-[520px_1fr]">
         <div className="space-y-6">
           <Card>
-            <h2 className="text-lg font-black">Step 1: Intro / Outro Videos</h2>
-            <p className="mt-1 text-sm text-pilot-muted">Upload optional bumper videos before generating or rendering the final story.</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {project.introVideoPath ? (
-                <video src={toPublicFileUrl(project.introVideoPath) || ""} controls className={`${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} w-full rounded-xl bg-pilot-soft object-cover`} />
-              ) : (
-                <div className={`grid ${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} place-items-center rounded-xl bg-pilot-soft text-sm text-pilot-muted`}>No intro</div>
-              )}
-              {project.outroVideoPath ? (
-                <video src={toPublicFileUrl(project.outroVideoPath) || ""} controls className={`${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} w-full rounded-xl bg-pilot-soft object-cover`} />
-              ) : (
-                <div className={`grid ${aspectRatio === "9:16" ? "aspect-[9/16] max-h-96" : "aspect-video"} place-items-center rounded-xl bg-pilot-soft text-sm text-pilot-muted`}>No outro</div>
-              )}
-            </div>
-            <div className="mt-4">
-              <KidsStoryBumperForm id={project.id} introVideoPath={project.introVideoPath} outroVideoPath={project.outroVideoPath} />
-            </div>
-          </Card>
-
-          <Card>
             <div className={`${previewAspectClass} overflow-hidden rounded-xl bg-pilot-soft`}>
               {finalUrl ? <video src={finalUrl} controls className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center p-6 text-center text-sm text-pilot-muted">No final story export yet</div>}
             </div>
@@ -91,6 +71,11 @@ export default async function KidsStoryDetailPage({ params }: Props) {
                 <div className={`mt-2 ${thumbnailAspectClass} overflow-hidden rounded-xl bg-pilot-soft`}>
                   {thumbnailUrl ? <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full min-h-40 place-items-center p-6 text-center text-sm text-pilot-muted">Create upload details to generate a thumbnail.</div>}
                 </div>
+                {project.thumbnailPath ? (
+                  <a href={`/api/videos/file?download=1&path=${encodeURIComponent(project.thumbnailPath)}`} className="mt-3 inline-flex h-10 items-center justify-center rounded-xl border border-pilot-line px-4 text-sm font-semibold">
+                    Download Thumbnail
+                  </a>
+                ) : null}
               </div>
               <div>
                 <div className="text-sm font-bold text-pilot-ink">Description</div>

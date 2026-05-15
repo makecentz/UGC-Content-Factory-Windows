@@ -56,13 +56,15 @@ export default async function SettingsPage() {
           </div>
         </Card>
         <Card>
-          <h2 className="text-lg font-black">Watermark</h2>
-          <p className="mt-2 text-sm text-pilot-muted">Upload a PNG logo and UGC Content Factory can overlay it during final story renders.</p>
+          <h2 className="text-lg font-black">Watermark & Default Intro / Outro</h2>
+          <p className="mt-2 text-sm text-pilot-muted">Upload a PNG watermark and optional intro/outro videos to use on every kids story render.</p>
           <div className="mt-4">
             <WatermarkSettings
               enabled={settings?.watermarkEnabled ?? false}
               position={settings?.watermarkPosition ?? "bottom-right"}
               opacity={settings?.watermarkOpacity ?? 0.7}
+              defaultIntroVideoPath={settings?.defaultIntroVideoPath}
+              defaultOutroVideoPath={settings?.defaultOutroVideoPath}
             />
           </div>
         </Card>

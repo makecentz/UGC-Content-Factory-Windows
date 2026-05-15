@@ -55,7 +55,7 @@ export async function generateKidsStoryPlan(input: KidsStoryInput): Promise<Kids
       {
         role: "system",
         content:
-          "You create safe, original YouTube Kids story videos. Return strict JSON with title, moral, script, and scenes. No visible text, subtitles, logos, brand names, copyrighted characters, copied dialogue, or scary/unsafe content."
+          "You create safe, original YouTube Kids story videos. Return strict JSON with title, moral, script, and scenes. No visible text, subtitles, logos, brand names, copyrighted characters, copied dialogue, or scary/unsafe content. Preserve character identity exactly: if the user's idea names a mouse, turtle, animal, toy, object, plant, or fantasy creature as a character, every scene must describe that exact character and must not replace it with a human."
       },
       {
         role: "user",
@@ -85,7 +85,7 @@ Return JSON:
   ]
 }
 
-Scene count: ${sceneCount}. Keep narration warm and simple. Every visual prompt must say: no text, no captions, no words on screen.`
+Scene count: ${sceneCount}. Keep narration warm and simple. Before writing scenes, identify the main character species/type from the prompt, title, theme, and script. Every visualDescription and prompt must repeat the exact main character species/type and key appearance details. Every visual prompt must say: no text, no captions, no words on screen.`
       }
     ]
   });

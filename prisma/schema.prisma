@@ -119,6 +119,8 @@ model Settings {
   watermarkEnabled     Boolean  @default(false)
   watermarkPosition    String   @default("bottom-right")
   watermarkOpacity     Float    @default(0.7)
+  defaultIntroVideoPath String?
+  defaultOutroVideoPath String?
   comfyEnabled         Boolean  @default(false)
   comfyServerUrl       String   @default("http://127.0.0.1:8188")
   comfyWanVersion      String   @default("wan22")

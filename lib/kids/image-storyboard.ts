@@ -19,6 +19,8 @@ type KidsImageProject = {
   artStyle: string;
   ageRange: string;
   aspectRatio?: string | null;
+  storyBrief?: string | null;
+  storyTheme?: string | null;
 };
 
 function client() {
@@ -38,6 +40,8 @@ function imagePrompt(scene: KidsImageScene, project: KidsImageProject) {
   return `Create one ${orientation} storyboard frame for a YouTube Kids story.
 
 Story: ${project.title}
+Story brief: ${project.storyBrief || "Use the scene details exactly."}
+Theme: ${project.storyTheme || "gentle adventure"}
 Audience age range: ${project.ageRange}
 Visual style: ${project.artStyle}
 Scene ${scene.sceneNumber}: ${scene.visualDescription || scene.prompt}
@@ -47,6 +51,9 @@ Requirements:
 - ${aspectRatio} ${orientation} composition
 - child-safe, warm, colorful, gentle
 - consistent storybook animation look
+- preserve the exact main character identity, species, colors, outfit/accessories, and role from the story brief and scene prompt
+- if the story says the character is a mouse, turtle, rabbit, animal, toy, object, plant, or fantasy creature, render that exact non-human character; do not turn it into a human girl, boy, woman, or man
+- keep the same main character design across every frame for this story
 - no visible text, no signs, no labels, no subtitles, no captions, no logos, no watermarks
 - do not show written words anywhere in the image`;
 }
