@@ -32,7 +32,7 @@ export function OnboardingForm({
         event.preventDefault();
         const formElement = event.currentTarget;
         setBusy(true);
-        setMessage("Saving credentials...");
+        setMessage("Saving setup...");
         const form = new FormData(formElement);
         const response = await fetch("/api/settings", {
           method: "POST",
@@ -51,7 +51,7 @@ export function OnboardingForm({
           return;
         }
 
-        setMessage("Saved. UGC Content Factory is ready.");
+        setMessage("Setup saved. UGC Content Factory is ready.");
         router.refresh();
         router.push("/kids");
       }}
@@ -77,7 +77,7 @@ export function OnboardingForm({
         />
       </label>
       <div className="flex flex-wrap items-center gap-3">
-        <Button disabled={busy}>{busy ? "Saving..." : "Save & Start"}</Button>
+        <Button disabled={busy}>{busy ? "Saving..." : "Complete Setup"}</Button>
         <span className="text-sm text-pilot-muted">OpenAI: {openaiConfigured ? "Saved" : "Needed"}</span>
       </div>
       {message ? <p className="text-sm text-pilot-muted">{message}</p> : null}

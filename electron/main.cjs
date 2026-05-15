@@ -363,15 +363,6 @@ async function boot() {
     });
     if (comfyAutoStart) {
       appendLog(`ComfyUI auto-start response status=${comfyAutoStart.statusCode} body=${JSON.stringify(comfyAutoStart.body)}`);
-      const message = typeof comfyAutoStart.body === "object" && comfyAutoStart.body ? comfyAutoStart.body.message : "";
-      if (comfyAutoStart.body?.ok === false && String(message).includes("ComfyUI could not be started")) {
-        dialog.showMessageBox({
-          type: "warning",
-          title: "ComfyUI",
-          message: "ComfyUI could not be started. Please open it manually or check your configured path.",
-          detail: String(message)
-        });
-      }
     }
     createWindow(port, credentialsAreReady(env) ? "/kids" : "/onboarding");
   } catch (error) {
